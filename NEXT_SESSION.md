@@ -30,9 +30,12 @@
   data layer in `apps/web/src/lib/data.ts` with SupabaseRepo; both money paths verified persisting to
   Postgres). App auto-uses Supabase when `apps/web/.env.local` is present, else in-memory demo.
   E2E forces demo mode: `cd apps/web && pnpm exec playwright test`.
-- **Remaining (need user credentials):**
-  - **Session J:** funded testnet account → deploy contracts (`cargo run --bin
-    hermes_contracts_build_contract` path / odra livenet), stand up real facilitator, swap
-    `DemoSigner`/`DemoFacilitator`.
-  - **Session K:** hardening + demo script + Playwright E2E.
+  - **J-prep (done, credential-free):** wasm toolchain installed; `cargo odra build` verified →
+    `contracts/wasm/{HermesToken,AgentRegistry,ReputationAnchor}.wasm`; deploy binary
+    `contracts/bin/deploy_testnet.rs` (`--features livenet`) + `contracts/Odra.toml`; `HttpFacilitatorClient`
+    drop-in (`apps/web/src/lib/facilitator-http.ts`); full runbook `docs/setup/testnet-deploy.md`.
+- **Remaining — Session J (needs YOUR funded testnet key):** follow `docs/setup/testnet-deploy.md` —
+  keygen + faucet-fund, set `ODRA_CASPER_LIVENET_*`, `cargo run --bin deploy_testnet --features livenet`,
+  record package hashes, run the casper-x402 facilitator, swap `DemoFacilitator`→`HttpFacilitatorClient`,
+  then the real EIP-712 signer spike (last, riskiest step). Interfaces unchanged → drop-in.
 - Demo mode currently powers the app end-to-end (in-memory store, simulated settlement — labeled in UI).

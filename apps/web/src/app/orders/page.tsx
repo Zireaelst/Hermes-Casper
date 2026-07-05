@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { AmountText, Card, EmptyState, PageHeader, StatusBadge } from "@/components/ui";
-import { getStore } from "@/lib/store";
+import { loadData } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export default function OrdersPage() {
-  const store = getStore();
+export default async function OrdersPage() {
+  const store = await loadData();
 
   return (
     <>

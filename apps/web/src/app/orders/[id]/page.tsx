@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AmountText, Card, Mono, PageHeader, StatusBadge } from "@/components/ui";
 import { WorkflowCanvas } from "@/components/WorkflowCanvas";
-import { getStore } from "@/lib/store";
+import { loadData } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export default async function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const store = getStore();
+  const store = await loadData();
   const order = store.orders.find((o) => o.id === id);
   if (!order) notFound();
 

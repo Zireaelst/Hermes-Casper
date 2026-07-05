@@ -1,12 +1,12 @@
 import { formatReputation } from "@hermes/shared";
 import { AmountText, Card, PageHeader } from "@/components/ui";
 import { buyListing } from "@/lib/actions";
-import { getStore } from "@/lib/store";
+import { loadData } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export default function MarketplacePage() {
-  const store = getStore();
+export default async function MarketplacePage() {
+  const store = await loadData();
   const listings = store.listings.filter((l) => l.status === "active");
 
   return (

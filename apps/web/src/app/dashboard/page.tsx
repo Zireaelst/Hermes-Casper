@@ -1,12 +1,12 @@
 import { addAmounts, formatAmount } from "@hermes/shared";
 import Link from "next/link";
 import { AmountText, Card, EmptyState, PageHeader, Stat, StatusBadge } from "@/components/ui";
-import { getStore } from "@/lib/store";
+import { loadData } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
-  const store = getStore();
+export default async function DashboardPage() {
+  const store = await loadData();
   const settled = store.payments.filter((p) => p.status === "settled");
   const spentToday = settled.reduce((acc, p) => addAmounts(acc, p.amount), "0");
   const budget = store.policy.dailyBudget;

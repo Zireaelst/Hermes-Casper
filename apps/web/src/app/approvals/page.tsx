@@ -1,11 +1,11 @@
 import { AmountText, Card, EmptyState, PageHeader } from "@/components/ui";
 import { approveSpend, rejectSpend } from "@/lib/actions";
-import { getStore } from "@/lib/store";
+import { loadData } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export default function ApprovalsPage() {
-  const store = getStore();
+export default async function ApprovalsPage() {
+  const store = await loadData();
 
   return (
     <>

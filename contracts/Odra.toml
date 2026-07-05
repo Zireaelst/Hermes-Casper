@@ -1,0 +1,8 @@
+[[contracts]]
+fqn = "hermes_token::HermesToken"
+
+[[contracts]]
+fqn = "agent_registry::AgentRegistry"
+
+[[contracts]]
+fqn = "reputation_anchor::ReputationAnchor"

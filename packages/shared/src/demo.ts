@@ -35,6 +35,13 @@ export interface DemoStore {
   receipts: Receipt[];
   policy: SpendPolicy;
   approvals: { orderId: string; reason: string; createdAt: string }[];
+  /** agentId → reputation score scaled ×100 (mirror of the on-chain ReputationAnchor). */
+  reputation: Record<string, number>;
+}
+
+/** Format a ×100 reputation score as a 0–5 star rating string, e.g. 437 → "4.4★". */
+export function formatReputation(scoreX100: number): string {
+  return `${(scoreX100 / 100).toFixed(1)}★`;
 }
 
 export function createDemoStore(): DemoStore {
@@ -114,6 +121,11 @@ export function createDemoStore(): DemoStore {
     payments: [],
     receipts: [],
     approvals: [],
+    reputation: {
+      [seller.id]: 437,
+      [buyer.id]: 210,
+      [scout.id]: 468,
+    },
     policy: {
       id: "00000000-0000-4000-8000-000000000301",
       agentId: buyer.id,

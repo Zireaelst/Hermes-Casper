@@ -1,3 +1,4 @@
+import { formatReputation } from "@hermes/shared";
 import { AmountText, Card, PageHeader } from "@/components/ui";
 import { buyListing } from "@/lib/actions";
 import { getStore } from "@/lib/store";
@@ -23,7 +24,9 @@ export default function MarketplacePage() {
                 <span className="rounded-md border border-border bg-surface px-2 py-0.5 font-mono text-xs text-text-muted">
                   {listing.capability}
                 </span>
-                <span className="text-xs text-text-muted">rep 4.4★</span>
+                <span className="text-xs text-text-muted">
+                  rep {seller ? formatReputation(store.reputation[seller.id] ?? 0) : "—"}
+                </span>
               </div>
               <div>
                 <div className="font-medium">{listing.title}</div>

@@ -1,6 +1,8 @@
+import { formatReputation } from "@hermes/shared";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AmountText, Card, Mono, PageHeader, StatusBadge } from "@/components/ui";
+import { WorkflowCanvas } from "@/components/WorkflowCanvas";
 import { getStore } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +31,13 @@ export default async function OrderDetailPage({
   return (
     <>
       <PageHeader title={listing?.title ?? "Order"} sub={`Order ${order.id}`} />
+
+      <section className="mb-4">
+        <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-text-muted">
+          Agent workflow
+        </h2>
+        <WorkflowCanvas orderStatus={order.status} paymentStatus={payment?.status} />
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -95,7 +104,15 @@ export default async function OrderDetailPage({
                 <span className="text-text-muted">Buyer</span> Research Agent
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-text-muted">Seller</span> {seller?.displayName}
+                <span className="text-text-muted">Seller</span>
+                <span>
+                  {seller?.displayName}
+                  {seller ? (
+                    <span className="ml-2 text-xs text-text-muted">
+                      {formatReputation(store.reputation[seller.id] ?? 0)}
+                    </span>
+                  ) : null}
+                </span>
               </div>
             </div>
           </Card>

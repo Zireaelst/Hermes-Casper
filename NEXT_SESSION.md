@@ -21,7 +21,15 @@
 5. Stop. Do not start the next session's task.
 
 ## Current position
-- **Last completed:** E1 Foundation (`packages/config`, `packages/types`, `packages/shared`) — green,
-  pushed at `1fa23fa`.
-- **Next up:** Session B — Odra contract skeleton (`HermesToken` CEP-18 + `AgentRegistry`), local Odra
-  test env only, no testnet. See `docs/product/task-planning.md` § MVP Session Plan → Session B.
+- **Done:** Sessions A–C (foundation + 3 Odra contracts, 8/8 tests, nightly-2026-01-01 pinned),
+  F1+G (x402 codecs, policy gate, payForOrder orchestrator — 15/15 tests), H+I (Next.js 16 console:
+  dashboard/marketplace/orders/approvals; both money paths verified live in the browser), plus
+  Supabase migrations written (not yet applied — no project linked).
+- **Remaining (need user credentials):**
+  - **Session D:** link a Supabase project (`SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF` in .env),
+    apply `supabase/migrations`, generate types, swap `DemoRepo` → Supabase repo.
+  - **Session J:** funded testnet account → deploy contracts (`cargo run --bin
+    hermes_contracts_build_contract` path / odra livenet), stand up real facilitator, swap
+    `DemoSigner`/`DemoFacilitator`.
+  - **Session K:** hardening + demo script + Playwright E2E.
+- Demo mode currently powers the app end-to-end (in-memory store, simulated settlement — labeled in UI).

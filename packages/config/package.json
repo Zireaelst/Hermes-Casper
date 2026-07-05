@@ -1,0 +1,14 @@
+{
+  "name": "@hermes/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./eslint": "./eslint.config.mjs",
+    "./prettier": "./prettier.config.mjs"
+  },
+  "peerDependencies": {
+    "eslint": "*",
+    "typescript-eslint": "*"
+  }
+}

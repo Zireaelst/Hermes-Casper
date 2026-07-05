@@ -14,6 +14,7 @@
   "dependencies": {
     "@hermes/shared": "workspace:*",
     "@hermes/types": "workspace:*",
+    "@supabase/supabase-js": "^2.110.0",
     "@xyflow/react": "^12.11.1",
     "next": "16.2.10",
     "react": "19.2.4",

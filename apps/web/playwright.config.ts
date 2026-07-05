@@ -21,9 +21,11 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
+    // Force the in-memory demo store so E2E is deterministic (no external DB).
     command: `pnpm dev --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: { HERMES_FORCE_DEMO: "1" },
   },
 });

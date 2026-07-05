@@ -9,19 +9,19 @@ import type {
   SpendPolicy,
   VerifyResult,
 } from "@hermes/types";
-import type { FacilitatorClient, Repo, SignerClient } from "./adapters.js";
+import type { FacilitatorClient, Repo, SignerClient } from "./adapters";
 import {
   PolicyDeniedError,
   RequiresHumanApprovalError,
   SettlementError,
-} from "./errors.js";
-import { payForOrder } from "./orchestrator.js";
-import { BasicPolicyGate } from "./policy.js";
+} from "./errors";
+import { payForOrder } from "./orchestrator";
+import { BasicPolicyGate } from "./policy";
 import {
   buildAuthorization,
   decodePaymentRequired,
   encodePaymentRequired,
-} from "./x402-codec.js";
+} from "./x402-codec";
 
 // ── fixtures ────────────────────────────────────────────────────────────────
 const PAYEE = `00${"b".repeat(64)}`;

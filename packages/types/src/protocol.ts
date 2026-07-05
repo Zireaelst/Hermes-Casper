@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Amount, Uuid } from "./common.js";
+import { Amount, Uuid } from "./common";
 
 /**
  * Hermes MCP tool input schemas. Mirror docs/api/api-specification.md §5 and

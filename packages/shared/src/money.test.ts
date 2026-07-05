@@ -5,7 +5,7 @@ import {
   formatAmount,
   subtractAmount,
   withinBudget,
-} from "./money.js";
+} from "./money";
 
 describe("money", () => {
   it("adds base-unit amounts without float error", () => {

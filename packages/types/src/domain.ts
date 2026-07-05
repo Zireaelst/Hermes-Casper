@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AccountHash, Amount, Nonce, PublicKey, Timestamp, Uuid } from "./common.js";
+import { AccountHash, Amount, Nonce, PublicKey, Timestamp, Uuid } from "./common";
 
 /**
  * Domain entities. Shapes mirror the DDL in docs/product/database-schema.md.

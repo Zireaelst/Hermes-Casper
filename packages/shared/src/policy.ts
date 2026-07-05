@@ -1,6 +1,6 @@
 import type { SpendPolicy } from "@hermes/types";
-import type { PolicyDecision, PolicyGate, SpendRequest } from "./adapters.js";
-import { compareAmounts, withinBudget } from "./money.js";
+import type { PolicyDecision, PolicyGate, SpendRequest } from "./adapters";
+import { compareAmounts, withinBudget } from "./money";
 
 /**
  * Budget + allowlist + threshold gate. Every autonomous spend passes through

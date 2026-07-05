@@ -1,7 +1,7 @@
 import type { Order, Payment, PaymentPayload, PaymentRequirements } from "@hermes/types";
-import type { FacilitatorClient, PolicyGate, Repo, SignerClient } from "./adapters.js";
-import { PolicyDeniedError, RequiresHumanApprovalError, SettlementError } from "./errors.js";
-import { buildAuthorization } from "./x402-codec.js";
+import type { FacilitatorClient, PolicyGate, Repo, SignerClient } from "./adapters";
+import { PolicyDeniedError, RequiresHumanApprovalError, SettlementError } from "./errors";
+import { buildAuthorization } from "./x402-codec";
 
 /**
  * In-process purchase orchestrator (MVP scope cut: replaces the LangGraph

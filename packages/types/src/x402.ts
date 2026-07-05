@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AccountHash, Amount, Caip2, Nonce, PublicKey } from "./common.js";
+import { AccountHash, Amount, Caip2, Nonce, PublicKey } from "./common";
 
 /**
  * x402 wire shapes for Casper. Verbatim from docs/research/casper-x402.md and

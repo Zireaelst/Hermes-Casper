@@ -4,7 +4,7 @@ import {
   SettleResult,
   type Authorization,
 } from "@hermes/types";
-import { ValidationError } from "./errors.js";
+import { ValidationError } from "./errors";
 
 /**
  * x402 header codecs. Headers carry base64-encoded JSON:

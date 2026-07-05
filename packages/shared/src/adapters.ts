@@ -11,8 +11,8 @@ import type {
   SettleResult,
   VerifyResult,
 } from "@hermes/types";
-import type { Result } from "./result.js";
-import type { SettlementError } from "./errors.js";
+import type { Result } from "./result";
+import type { SettlementError } from "./errors";
 
 /**
  * Edge adapter interfaces (hexagonal boundaries). Implementations live in the

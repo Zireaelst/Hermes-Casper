@@ -23,8 +23,10 @@
 ## Current position
 - **Done:** Sessions A–C (foundation + 3 Odra contracts, 8/8 tests, nightly-2026-01-01 pinned),
   F1+G (x402 codecs, policy gate, payForOrder orchestrator — 15/15 tests), H+I (Next.js 16 console:
-  dashboard/marketplace/orders/approvals; both money paths verified live in the browser), plus
-  Supabase migrations written (not yet applied — no project linked).
+  dashboard/marketplace/orders/approvals; both money paths verified live in the browser),
+  **K** (workflow canvas via React Flow, live reputation, Playwright E2E 2/2 for both money paths,
+  demo runbook + screenshot), plus Supabase migrations written (not yet applied — no project linked).
+  E2E: `cd apps/web && pnpm exec playwright test`.
 - **Remaining (need user credentials):**
   - **Session D:** link a Supabase project (`SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF` in .env),
     apply `supabase/migrations`, generate types, swap `DemoRepo` → Supabase repo.

@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Rust / Odra contracts
+target/
+Cargo.lock
+**/wasm/*.wasm
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+casper-keys/
+secret_key.pem
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+
+# Testing / coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Editor / OS
+.DS_Store
+.idea/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Claude Code local overrides (keep shared config, ignore personal)
+.claude/settings.local.json
+.claude/*.local.json

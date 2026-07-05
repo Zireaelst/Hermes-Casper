@@ -39,11 +39,17 @@ pnpm --filter @hermes/web dev     # http://localhost:3000
 cd apps/web && pnpm exec playwright test    # both money paths, green; regenerates the screenshot above
 ```
 
-## What swaps in for production (unchanged interfaces)
-| Demo stand-in | Production (session) |
-|---------------|----------------------|
-| `DemoRepo` (in-memory) | Supabase repo over the committed migrations — **Session D** |
-| `DemoSigner` / `DemoFacilitator` | Real KMS signer + x402 facilitator settling on Casper testnet — **Session J** |
-| Simulated deploy hash | Real Casper deploy hash from `transfer_with_authorization` |
+## Data mode
+The app auto-selects its data source: if `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+are set (see `apps/web/.env.local`), it reads/writes the real **Supabase** database (project `hermes`);
+otherwise it uses the in-memory demo store. Playwright forces demo mode (`HERMES_FORCE_DEMO=1`) for
+deterministic E2E. Both modes were verified end-to-end (orders/payments/receipts persist in Postgres).
 
-All three implement the same interfaces in `packages/shared/src/adapters.ts`, so the swap is drop-in.
+## What swaps in for production (unchanged interfaces)
+| Stand-in | Production (session) | Status |
+|----------|----------------------|--------|
+| `DemoRepo` (in-memory) | **Supabase repo** over the committed migrations | ✅ **Session D — done** |
+| `DemoSigner` / `DemoFacilitator` | Real KMS signer + x402 facilitator on Casper testnet | Session J |
+| Simulated deploy hash | Real Casper deploy hash from `transfer_with_authorization` | Session J |
+
+All implement the same interfaces in `packages/shared/src/adapters.ts`, so each swap is drop-in.

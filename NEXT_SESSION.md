@@ -25,11 +25,12 @@
   F1+G (x402 codecs, policy gate, payForOrder orchestrator — 15/15 tests), H+I (Next.js 16 console:
   dashboard/marketplace/orders/approvals; both money paths verified live in the browser),
   **K** (workflow canvas via React Flow, live reputation, Playwright E2E 2/2 for both money paths,
-  demo runbook + screenshot), plus Supabase migrations written (not yet applied — no project linked).
-  E2E: `cd apps/web && pnpm exec playwright test`.
+  demo runbook + screenshot),
+  **D** (real Supabase: project `hermes`/gyerdxtaspppyxdqybpn; migrations + seed applied; env-gated
+  data layer in `apps/web/src/lib/data.ts` with SupabaseRepo; both money paths verified persisting to
+  Postgres). App auto-uses Supabase when `apps/web/.env.local` is present, else in-memory demo.
+  E2E forces demo mode: `cd apps/web && pnpm exec playwright test`.
 - **Remaining (need user credentials):**
-  - **Session D:** link a Supabase project (`SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF` in .env),
-    apply `supabase/migrations`, generate types, swap `DemoRepo` → Supabase repo.
   - **Session J:** funded testnet account → deploy contracts (`cargo run --bin
     hermes_contracts_build_contract` path / odra livenet), stand up real facilitator, swap
     `DemoSigner`/`DemoFacilitator`.

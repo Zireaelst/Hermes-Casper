@@ -49,3 +49,36 @@ M1 E1 · M2 E2+E3 · M3 E4 · M4 E5 · M5 E6 · M6 E7.
 ## Definition of Done (per issue)
 Compiles; `pnpm lint && typecheck && test` (or `cargo`/`clippy`/odra) green; tests for new logic; relevant
 `/docs` touched if behavior changed; no secrets/dead code; behavior verified. Branch per issue; small PRs.
+
+---
+
+## MVP Session Plan (10-minute sessions — see `NEXT_SESSION.md`)
+
+> Locked scope cuts vs the Phase 2 production architecture, chosen for session-budget reasons:
+> **in-process TS agent logic** (no Python/LangGraph service), **one collapsed Signer+Facilitator TS
+> module** (demo env-var key, not real KMS), **Odra local test env only until one dedicated deploy
+> session**, **no separate indexer** (poll on demand). Revisit post-MVP if the roadmap needs the full
+> production topology. Each session = one artifact, one exit command, one commit+push.
+
+| # | Session | Artifact | Exit criterion |
+|---|---------|----------|-----------------|
+| A | ✅ done | `packages/{config,types,shared}` | `pnpm lint/typecheck/test` green (`1fa23fa`) |
+| B | Contracts I | `contracts/hermes-token` (CEP-18 via `odra_modules`) + `contracts/agent-registry` | `cargo test` (Odra local env) green |
+| C | Contracts II | `contracts/reputation-anchor`; finalize Cargo workspace | all 3 contracts' Odra tests green |
+| D | Supabase schema | `supabase/migrations/*.sql` (verbatim from `database-schema.md`), `supabase/config.toml`, seed | `supabase db reset` / lint applies cleanly (needs user's Supabase project linked) |
+| E | Repo layer | `packages/shared` Supabase client + typed repos implementing `Repo` (generated types from D) | `pnpm --filter @hermes/shared typecheck/test` green |
+| F1 | Signer spike | authorization-signing module + math-level unit test (no chain) — de-risks EIP-712 compat | unit test green |
+| F2 | Facilitator | collapsed sign+verify+settle module wired to `casper-js-sdk`, run against Odra local env | local settle test green |
+| G | Agent logic | in-process TS orchestrator: discover→negotiate→order→pay, using `PolicyGate`+facilitator+repo | script/test: fake run reaches `settled` |
+| H | Web init | `apps/web` (App Router, Tailwind, shadcn init), dashboard reading Supabase (read-only) | `pnpm dev` renders dashboard |
+| I | Web core flow | Marketplace + Order/Receipt pages; "Buy now" server action calling session G's logic | click-through reaches `settled` in UI (local env) |
+| J | Testnet deploy | Deploy contracts to Casper testnet; point facilitator/signer + web at real testnet | one real payment settles on testnet with a receipt |
+| K | Harden + demo | Error/empty states, minimal auth guard, demo script, one Playwright screenshot | demo runs end-to-end; screenshot captured |
+
+**Splitting rule:** if a session's diff would exceed ~1 package/contract or ~150 LOC, split it further
+(e.g. F1/F2 already pre-split for this reason). Prefer more, smaller, always-green sessions over fewer
+large ones — a session that ends red wastes the *next* session's ramp-up too.
+
+**External-dependency sessions** (D, J) need the user to have credentials ready beforehand (Supabase
+project + `SUPABASE_ACCESS_TOKEN`/`SUPABASE_PROJECT_REF`; a funded testnet account) — confirm before
+starting so the 10 minutes aren't spent waiting on account creation.

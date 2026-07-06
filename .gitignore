@@ -43,3 +43,6 @@ pnpm-debug.log*
 # Claude Code local overrides (keep shared config, ignore personal)
 .claude/settings.local.json
 .claude/*.local.json
+
+# Playwright MCP session output
+.playwright-mcp/

@@ -3,9 +3,14 @@
 > Status: Draft (Phase 3) · Updated: 2026-07-05 · Implements [01-frontend](../architecture/01-frontend.md)
 > with the [design system](./design-system.md). Every screen defines loading/empty/error/success states.
 
+> **Stale-pending-migration (2026-07-07):** "Dark-first" below describes the current console only. The
+> design system is now **light-first** (see `design-system.md`); the light surface ships on the marketing
+> landing first. Restyling this console to the light system is a tracked follow-up in `NEXT_SESSION.md`.
+
 ## Global shell
 Left nav (Dashboard, Marketplace, Agents, Negotiations, Orders, Workflows, Approvals, Settings), top bar
-(wallet connect via CSPR.click, active-run indicator, spend-today meter), content area. Dark-first.
+(wallet connect via CSPR.click, active-run indicator, spend-today meter), content area. Dark-first
+(legacy — pending migration to the light-first system).
 
 ## Screens
 

@@ -1,15 +1,24 @@
 @import "tailwindcss";
 
-/* Hermes design tokens — docs/product/design-system.md. Dark-first, financial-grade. */
+/* Hermes design tokens — docs/product/design-system.md.
+ * Default (root) palette is the dark console; the light-first marketing surface
+ * overrides the same semantic tokens under `.theme-light` (see below). Components
+ * reference semantic tokens only — never raw hex. */
 @theme {
   --color-surface: #0b0e14;
   --color-surface-raised: #12161f;
+  --color-surface-sunken: #1a1f2b;
   --color-surface-hover: #1a1f2b;
   --color-border: #232936;
   --color-text: #e6e9f0;
+  --color-text-strong: #ffffff;
   --color-text-muted: #8b93a7;
+  --color-text-subtle: #6b7280;
   --color-accent: #6c8cff;
   --color-accent-fg: #0b0e14;
+  --color-accent-soft: #6c8cff;
+  --color-focus: #6c8cff;
+  --color-selection: #2a3350;
   --color-success: #4ade80;
   --color-warning: #fbbf24;
   --color-danger: #f87171;
@@ -17,6 +26,27 @@
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+}
+
+/* Light-first marketing palette — maps the hero spec's colors onto the same
+ * semantic tokens (design-system.md §2). Applied to the (marketing) subtree. */
+.theme-light {
+  --color-surface: #ffffff;
+  --color-surface-raised: #fafbf9;
+  --color-surface-sunken: #f1f3f1;
+  --color-surface-hover: #f1f3f1;
+  --color-border: #f1f3f1;
+  --color-text: #1c2e1e;
+  --color-text-strong: #000000;
+  --color-text-muted: #5a635a;
+  --color-text-subtle: #738273;
+  --color-accent: #1c2e1e;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #4d6d47;
+  --color-focus: #1c2e1e;
+  --color-selection: #eaece9;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
@@ -27,4 +57,29 @@ body {
 
 ::selection {
   background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+.theme-light ::selection {
+  background: var(--color-selection);
+  color: var(--color-accent);
+}
+
+/* Typewriter cursor — hero spec §1. */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blink {
+    animation: none;
+  }
 }

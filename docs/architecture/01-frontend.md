@@ -9,7 +9,10 @@ approve spends (HITL), and visualize workflows.
 ## Stack & conventions
 Next.js App Router · React Server Components by default (`"use client"` only where needed) · Tailwind +
 tokens (`packages/config`) · shadcn/ui via `packages/ui` · Framer Motion (subtle) · React Flow (canvas).
-Domain logic in `packages/shared`; types in `packages/types`. Financial-grade, dark-first.
+Domain logic in `packages/shared`; types in `packages/types`. Financial-grade. **Light-first** as of
+2026-07-07 (see [design-system](../product/design-system.md)); the light surface ships on `(marketing)`
+first, the `(app)` console migration is a tracked follow-up. Tokens live in `@theme` in
+`apps/web/src/app/globals.css` (Tailwind v4 — no `packages/config` preset).
 
 ## Route map (App Router)
 ```

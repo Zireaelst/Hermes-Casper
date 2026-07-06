@@ -16,12 +16,15 @@ use hermes_contracts::hermes_token::{HermesToken, HermesTokenInitArgs};
 use hermes_contracts::reputation_anchor::ReputationAnchor;
 use odra::casper_types::U256;
 use odra::host::{Deployer, NoArgs};
+use odra::prelude::Addressable;
 
 fn main() {
     let env = odra_casper_livenet_env::env();
 
     // 1,000,000 HERMES at 9 decimals. chain_name seeds the x402 EIP-712 domain.
-    env.set_gas(300_000_000_000u64);
+    // HermesToken bundles CEP-18 + CEP-3009 → the largest install, needs the most gas.
+    // Testnet block_gas_limit = 812.5 CSPR per transaction — stay just under it.
+    env.set_gas(800_000_000_000u64);
     let token = HermesToken::deploy(
         &env,
         HermesTokenInitArgs {
@@ -31,11 +34,11 @@ fn main() {
     );
     println!("HermesToken      : {}", token.address().to_string());
 
-    env.set_gas(150_000_000_000u64);
+    env.set_gas(400_000_000_000u64);
     let registry = AgentRegistry::deploy(&env, NoArgs);
     println!("AgentRegistry    : {}", registry.address().to_string());
 
-    env.set_gas(150_000_000_000u64);
+    env.set_gas(400_000_000_000u64);
     let reputation = ReputationAnchor::deploy(&env, NoArgs);
     println!("ReputationAnchor : {}", reputation.address().to_string());
 }

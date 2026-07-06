@@ -39,7 +39,12 @@
   `casper-keys/secret_key.pem` (secp256k1, git-ignored), ~3188 CSPR left. Token hash wired into
   `apps/web/.env.local` (`X402_PAYMENT_TOKEN_CONTRACT`). Gotchas solved + documented: wasm must be
   MVP-lowered via `wasm-opt`; livenet needs `EVENTS_URL`; gas ≤ 812.5 CSPR block limit (token=800).
-- **Remaining — Session J finish (real settlement):** run the make-software casper-x402 facilitator
-  against HermesToken, set `X402_FACILITATOR_URL`, swap `DemoFacilitator`→`HttpFacilitatorClient`, then
-  the EIP-712 signer spike (real signature the facilitator accepts). Until then demo mode stays on.
+- **Facilitator RUNNING ✅:** make-software/casper-x402 cloned to `../casper-x402`; its
+  `js/examples/facilitator` runs on `http://localhost:4022` (secp256k1 deployer key = feePayer;
+  `/health` + `/supported` verified). Restart: see `docs/setup/testnet-deploy.md` §5.
+  `X402_FACILITATOR_URL` set in `apps/web/.env.local`.
+- **Remaining — real settlement:** (1) distribute HERMES to a buyer account (deployer holds all 1M),
+  (2) real x402 **client signer** via `@make-software/casper-x402` `toClientCasperSigner` so the app
+  produces an EIP-712 sig the facilitator accepts, (3) swap `DemoSigner`+`DemoFacilitator` →
+  real signer + `HttpFacilitatorClient` in `getDeps()`. Until then demo mode stays on.
 - Demo mode currently powers the app end-to-end (in-memory store, simulated settlement — labeled in UI).

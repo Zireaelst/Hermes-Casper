@@ -73,11 +73,27 @@ Record them in `/docs/contracts` (deploy log) and wire the token hash below.
 ## 5. Point the app + facilitator at testnet
 - `apps/web/.env.local` (git-ignored): set `X402_PAYMENT_TOKEN_CONTRACT=<HermesToken package hash>`
   and `X402_FACILITATOR_URL=<facilitator url>`.
-- Run the **make-software/casper-x402** facilitator against HermesToken (its funded gas key = your
-  account). See its `js/examples/facilitator` README; endpoints `/supported /verify /settle /health`
-  (shapes in `docs/research/casper-x402.md`).
-- Swap the app's `DemoFacilitator` → `HttpFacilitatorClient` (already written,
-  `apps/web/src/lib/facilitator-http.ts`) in `getDeps()`.
+- **Run the facilitator** (make-software/casper-x402). Verified working procedure:
+  ```bash
+  git clone --depth 1 https://github.com/make-software/casper-x402
+  cd casper-x402/js && pnpm install && pnpm build
+  cd examples/facilitator
+  # create .env (secret PEM is the funded deployer key; algo secp256k1 for a Casper Wallet key):
+  cat > .env <<EOF
+  PORT=4022
+  CASPER_NETWORKS=casper:casper-test
+  SECRET_KEY_ALGO_CASPER_CASPER_TEST=secp256k1
+  RPCURL_CASPER_CASPER_TEST=https://node.testnet.casper.network/rpc
+  SECRET_KEY_PEM_CASPER_CASPER_TEST="$(cat /path/to/casper-keys/secret_key.pem)"
+  EOF
+  pnpm exec tsx index.ts   # 🚀 Facilitator listening on http://localhost:4022
+  ```
+  Verify: `curl localhost:4022/health` → `{"status":"ok"}`; `curl localhost:4022/supported` shows the
+  `exact` scheme + `casper:casper-test` + your account as `feePayer`. **Status: running ✅.**
+- `apps/web/.env.local`: `X402_FACILITATOR_URL=http://localhost:4022` (done).
+- **Remaining:** swap `DemoFacilitator` → `HttpFacilitatorClient` (`apps/web/src/lib/facilitator-http.ts`)
+  in `getDeps()` — but first the real signer + HERMES token distribution (below), or `/verify` returns
+  `invalid_signature`.
 
 ## 6. The remaining spike (real signing)
 `DemoSigner` returns a structurally-valid but not chain-valid signature. Real settlement needs an

@@ -47,9 +47,14 @@
   +client with our HermesToken → on-chain `transfer_with_authorization` succeeded, tx
   `66151d11…ef95bf`. **Signer/domain spike solved:** the token's `chain_name` must be the full CAIP-2
   `casper:casper-test` (redeployed → `846fdfc6…12df2c`). Facilitator config in `../casper-x402/js/examples/{facilitator,server}/.env`.
-- **Remaining — wire it into the Hermes app (`apps/web`):** replace the app's DemoSigner/DemoFacilitator
-  path with the casper-x402 client SDK (`createClientCasperSigner` + `ExactCasperScheme` +
-  `wrapFetchWithPayment`), i.e. have `payForOrder` hit an x402-protected endpoint instead of the demo
-  simulation. Buyer needs HERMES (mint via token `mint`, deployer=minter) + a keypair. Then real
-  Receipts carry real deploy hashes. Until wired, the app stays in demo/Supabase mode.
+- **✅ APP INTEGRATION DONE — the Hermes app itself settles on-chain (2026-07-06):** `apps/web/src/lib/x402-real.ts`
+  uses casper-x402's client `ExactCasperScheme` + `createClientCasperSigner` to sign, posts to the
+  facilitator `/settle`; `actions.ts` runs the policy gate then records a real Payment+Receipt.
+  Verified: "Buy now" in the app → real testnet tx `69951a62…be233c`, deploy hash persisted in Supabase
+  + shown in the UI Receipt. Wire payload nests requirements under `accepted` (not top-level scheme/network).
+  Chain mode gated by env (`X402_FACILITATOR_URL` + `X402_PAYMENT_TOKEN_CONTRACT` + `HERMES_BUYER_KEY_PATH`,
+  off when `HERMES_FORCE_DEMO=1`); demo + Supabase modes still work (E2E green).
+  **To run chain mode:** start facilitator (`../casper-x402/js/examples/facilitator`, §5) + `pnpm dev`.
+- **MVP COMPLETE.** Optional next: mint HERMES to distinct buyer/seller agents for varied balances;
+  wire the on-chain AgentRegistry/ReputationAnchor; production hardening of the collapsed facilitator.
 - Demo mode currently powers the app end-to-end (in-memory store, simulated settlement — labeled in UI).

@@ -8,8 +8,8 @@ import {
   demoRequirementsFor,
   payForOrder,
 } from "@hermes/shared";
-import type { PolicyGate } from "@hermes/shared";
-import type { Order } from "@hermes/types";
+import type { PolicyGate, Repo } from "@hermes/shared";
+import type { Order, Payment, Receipt } from "@hermes/types";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -21,6 +21,10 @@ import {
   parkApprovalDemo,
   setOrderStatus,
 } from "./data";
+import { chainSettlementEnabled, settleOrderOnChain, type ChainSettleResult } from "./x402-real";
+
+const BUYER_AGENT_ID = "00000000-0000-4000-8000-000000000002";
+const nowIso = () => new Date().toISOString();
 
 async function executePayment(order: Order, gateOverride?: PolicyGate): Promise<void> {
   const data = await loadData();
@@ -30,6 +34,37 @@ async function executePayment(order: Order, gateOverride?: PolicyGate): Promise<
   const deps = getDeps();
 
   await setOrderStatus(order.id, "settling");
+
+  // Chain mode: real HERMES transfer_with_authorization via the x402 facilitator.
+  if (chainSettlementEnabled()) {
+    const gate = gateOverride ?? deps.policyGate;
+    const decision = await gate.evaluate({
+      agentId: BUYER_AGENT_ID,
+      amount: order.priceAmount,
+      payee: seller.casperAccountHash,
+      asset: order.asset,
+      network: "casper:casper-test",
+    });
+    if (decision.kind === "requires_human") {
+      await setOrderStatus(order.id, "authorized");
+      parkApprovalDemo(order.id, decision.reason);
+      return;
+    }
+    if (decision.kind === "denied") {
+      await setOrderStatus(order.id, "failed");
+      return;
+    }
+    try {
+      const result = await settleOrderOnChain(order, seller.casperAccountHash);
+      await recordChainSettlement(deps.repo, order, result);
+    } catch (error) {
+      await setOrderStatus(order.id, "failed");
+      console.error("chain settlement failed", error);
+    }
+    return;
+  }
+
+  // Demo mode: simulated signer + facilitator.
   try {
     await payForOrder(order, {
       policyGate: gateOverride ?? deps.policyGate,
@@ -51,6 +86,42 @@ async function executePayment(order: Order, gateOverride?: PolicyGate): Promise<
     if (error instanceof PolicyDeniedError || error instanceof SettlementError) return;
     throw error;
   }
+}
+
+/** Persist a real on-chain settlement as Payment + Receipt (marks order settled). */
+async function recordChainSettlement(
+  repo: Repo,
+  order: Order,
+  result: ChainSettleResult,
+): Promise<void> {
+  const iso = nowIso();
+  const payment: Payment = {
+    id: crypto.randomUUID(),
+    orderId: order.id,
+    nonce: result.nonce,
+    amount: result.amount,
+    payer: result.payer as Payment["payer"],
+    payee: result.payee as Payment["payee"],
+    asset: order.asset,
+    status: "authorized",
+    deployHash: null,
+    validBefore: iso,
+    createdAt: iso,
+    updatedAt: iso,
+  };
+  await repo.createPayment(payment);
+  const receipt: Receipt = {
+    id: crypto.randomUUID(),
+    paymentId: payment.id,
+    deployHash: result.deployHash,
+    amount: result.amount,
+    payer: result.payer as Receipt["payer"],
+    payee: result.payee as Receipt["payee"],
+    settledAt: iso,
+    raw: { transaction: result.deployHash, network: "casper:casper-test", onChain: true },
+    createdAt: iso,
+  };
+  await repo.markSettled(payment.id, receipt);
 }
 
 /** Marketplace "Buy now": create Order → policy gate → pay → settle (or park for HITL). */

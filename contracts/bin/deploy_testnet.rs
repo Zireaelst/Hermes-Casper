@@ -28,17 +28,23 @@ fn main() {
     let token = HermesToken::deploy(
         &env,
         HermesTokenInitArgs {
-            chain_name: "casper-test".to_string(),
+            // Must equal the x402 CAIP-2 network id (requirements.network) so the on-chain
+            // EIP-712 domain chainId matches the client/facilitator SDK domain.
+            chain_name: "casper:casper-test".to_string(),
             initial_supply: U256::from(1_000_000_000_000_000u64),
         },
     );
     println!("HermesToken      : {}", token.address().to_string());
 
-    env.set_gas(400_000_000_000u64);
-    let registry = AgentRegistry::deploy(&env, NoArgs);
-    println!("AgentRegistry    : {}", registry.address().to_string());
+    // AgentRegistry + ReputationAnchor already deployed (they don't depend on chain_name);
+    // re-enable to deploy a fresh full set.
+    if std::env::var("DEPLOY_ALL").is_ok() {
+        env.set_gas(400_000_000_000u64);
+        let registry = AgentRegistry::deploy(&env, NoArgs);
+        println!("AgentRegistry    : {}", registry.address().to_string());
 
-    env.set_gas(400_000_000_000u64);
-    let reputation = ReputationAnchor::deploy(&env, NoArgs);
-    println!("ReputationAnchor : {}", reputation.address().to_string());
+        env.set_gas(400_000_000_000u64);
+        let reputation = ReputationAnchor::deploy(&env, NoArgs);
+        println!("ReputationAnchor : {}", reputation.address().to_string());
+    }
 }

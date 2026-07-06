@@ -43,8 +43,13 @@
   `js/examples/facilitator` runs on `http://localhost:4022` (secp256k1 deployer key = feePayer;
   `/health` + `/supported` verified). Restart: see `docs/setup/testnet-deploy.md` §5.
   `X402_FACILITATOR_URL` set in `apps/web/.env.local`.
-- **Remaining — real settlement:** (1) distribute HERMES to a buyer account (deployer holds all 1M),
-  (2) real x402 **client signer** via `@make-software/casper-x402` `toClientCasperSigner` so the app
-  produces an EIP-712 sig the facilitator accepts, (3) swap `DemoSigner`+`DemoFacilitator` →
-  real signer + `HttpFacilitatorClient` in `getDeps()`. Until then demo mode stays on.
+- **✅ REAL x402 SETTLEMENT PROVEN ON TESTNET (2026-07-06):** ran casper-x402 server(4021)+facilitator(4022)
+  +client with our HermesToken → on-chain `transfer_with_authorization` succeeded, tx
+  `66151d11…ef95bf`. **Signer/domain spike solved:** the token's `chain_name` must be the full CAIP-2
+  `casper:casper-test` (redeployed → `846fdfc6…12df2c`). Facilitator config in `../casper-x402/js/examples/{facilitator,server}/.env`.
+- **Remaining — wire it into the Hermes app (`apps/web`):** replace the app's DemoSigner/DemoFacilitator
+  path with the casper-x402 client SDK (`createClientCasperSigner` + `ExactCasperScheme` +
+  `wrapFetchWithPayment`), i.e. have `payForOrder` hit an x402-protected endpoint instead of the demo
+  simulation. Buyer needs HERMES (mint via token `mint`, deployer=minter) + a keypair. Then real
+  Receipts carry real deploy hashes. Until wired, the app stays in demo/Supabase mode.
 - Demo mode currently powers the app end-to-end (in-memory store, simulated settlement — labeled in UI).

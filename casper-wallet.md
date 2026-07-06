@@ -17,12 +17,16 @@ export ODRA_CASPER_LIVENET_CHAIN_NAME=casper-test
 ```
 
 ## Deployed contracts (Casper testnet, 2026-07-06) ✅
-- **HermesToken:**      `hash-3db363dfcf10f877c8ce93655ffc7003a632df6e2fecabff13fd7a1a929e905d`
+- **HermesToken:**      `hash-846fdfc631fe16515dddb4862ff81e43f5735b9b014a0b5d8352512ee712df2c`
+  (redeployed with `chain_name=casper:casper-test` — EIP-712 domain fix; eski `3db363…905d` geçersiz)
 - **AgentRegistry:**    `hash-2135533ff2b3f75d6ecfafedb98427cdf3d4982064d5d7d57f068ec70edcd349`
 - **ReputationAnchor:** `hash-8f6d6e6ab2f398cc2e139ab7a77e33d34ecb59953f0825df0277ed459e04cd4f`
 
 x402 asset (token package hash, `hash-` prefix'siz):
-`3db363dfcf10f877c8ce93655ffc7003a632df6e2fecabff13fd7a1a929e905d`
+`846fdfc631fe16515dddb4862ff81e43f5735b9b014a0b5d8352512ee712df2c`
+
+**✅ Gerçek zincir-üstü x402 settlement kanıtlandı** (self-transfer, 7.5 HERMES):
+tx `66151d11dc3b2d6ef356e243e885e21b10f4fefb1c51079d8eef48fbabef95bf`
 
 Deploy tx'leri (cspr.live/transaction/...):
 - token: `fe4d3d96d38542bd0fe1d86e1060b23fb57ac3a5b48c0a7c05ab4d080f3087c7`

@@ -95,7 +95,29 @@ Record them in `/docs/contracts` (deploy log) and wire the token hash below.
   in `getDeps()` — but first the real signer + HERMES token distribution (below), or `/verify` returns
   `invalid_signature`.
 
-## 6. The remaining spike (real signing)
+> **⚠️ Critical — EIP-712 domain:** deploy HermesToken with `chain_name` = the **full CAIP-2 id**
+> (`casper:casper-test`), NOT bare `casper-test`. The on-chain CEP-3009 domain `chainId` = `chain_name`,
+> and the x402 SDK uses `requirements.network` (the CAIP-2 id). A mismatch passes the facilitator's
+> off-chain `/verify` but reverts on-chain with `User error: 37003` (InvalidSignature). Verified fix.
+
+## 6. Real settlement — PROVEN ✅ (2026-07-06)
+Ran the casper-x402 example trio against HermesToken and settled a real `transfer_with_authorization`
+on testnet (tx `66151d11…ef95bf`):
+```bash
+# facilitator (already running, §5) on :4022
+# resource server on :4021 — examples/server/.env:
+#   PAYEE_ADDRESS=00<seller account hash>   FACILITATOR_URL=http://localhost:4022
+#   CAIP2_CHAIN_ID=casper:casper-test        ASSET_PACKAGE=<HermesToken pkg hash>
+#   ASSET_NAME=Hermes Credit                 (must equal the CEP-18 token name)
+cd casper-x402/js/examples/server   && pnpm exec tsx index.ts
+# client pays (buyer key needs HERMES balance; deployer holds all 1M):
+cd ../client && CLIENT_PRIVATE_KEY_PATH=<key> CLIENT_KEY_ALGO=secp256k1 \
+  SERVER_URL=http://localhost:4021 pnpm exec tsx index.ts
+# → 💰 Payment Details: { success: true, transaction: '66151d11…' }
+```
+Address format: x402 account addresses are `"00" + <64-hex account hash>` (66 chars).
+
+## 7. The remaining spike (real signing)
 `DemoSigner` returns a structurally-valid but not chain-valid signature. Real settlement needs an
 **EIP-712 signer** compatible with the facilitator's verification (`casper-eip-712`, seeded by the
 token's `chain_name` + name/version). Prove signer↔facilitator compatibility against testnet before

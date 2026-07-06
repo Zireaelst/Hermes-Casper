@@ -29,26 +29,46 @@ Copy the deploy vars from `.env.example` into your shell / `.env`:
 ```bash
 export ODRA_CASPER_LIVENET_SECRET_KEY_PATH=./casper-keys/secret_key.pem
 export ODRA_CASPER_LIVENET_NODE_ADDRESS=https://node.testnet.casper.network/rpc
+export ODRA_CASPER_LIVENET_EVENTS_URL=https://node.testnet.casper.network/events
 export ODRA_CASPER_LIVENET_CHAIN_NAME=casper-test
 ```
+> All four are required — Odra livenet listens on the SSE `EVENTS_URL` for deploy execution results.
 
-## 3. Build the wasm
+## 3. Build the wasm — then LOWER it to MVP (required!)
 ```bash
 cd contracts
-cargo odra build         # emits wasm/HermesToken.wasm, AgentRegistry.wasm, ReputationAnchor.wasm
+cargo odra build         # emits wasm/{HermesToken,AgentRegistry,ReputationAnchor}.wasm
+```
+Recent Rust emits wasm with **bulk-memory + sign-ext** ops, which the Casper VM rejects
+(`Wasm preprocessing error: Bulk memory operations are not supported`). Lower each wasm to MVP with
+`wasm-opt` (binaryen) — this is the step that actually makes it deployable:
+```bash
+cd wasm
+for w in HermesToken AgentRegistry ReputationAnchor; do
+  wasm-opt "$w.wasm" --enable-bulk-memory --enable-sign-ext \
+    --signext-lowering --llvm-memory-copy-fill-lowering -O1 -o "$w.tmp.wasm"
+  wasm-opt "$w.tmp.wasm" --mvp-features -o "$w.wasm"   # re-emit strict MVP (errors if any feature remains)
+  rm -f "$w.tmp.wasm"
+done
+cd ..
 ```
 
 ## 4. Deploy
 ```bash
 cargo run --bin deploy_testnet --features livenet
 ```
-Prints three hashes:
+**Gas:** testnet `block_gas_limit ≈ 812.5 CSPR` per transaction. The HermesToken install (CEP-18 +
+CEP-3009) needs ~800 CSPR — `deploy_testnet.rs` sets it to `800_000_000_000` motes (just under the
+limit); registry/reputation use `400_000_000_000`. Total ≈ 900 CSPR actually charged. Prints three hashes:
 ```
 HermesToken      : hash-...
 AgentRegistry    : hash-...
 ReputationAnchor : hash-...
 ```
 Record them in `/docs/contracts` (deploy log) and wire the token hash below.
+
+> **Already deployed once** (2026-07-06) — see `casper-wallet.md` + `docs/contracts/README.md` for the
+> live testnet package hashes. Re-run only to redeploy fresh contracts.
 
 ## 5. Point the app + facilitator at testnet
 - `apps/web/.env.local` (git-ignored): set `X402_PAYMENT_TOKEN_CONTRACT=<HermesToken package hash>`

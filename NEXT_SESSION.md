@@ -34,8 +34,12 @@
     `contracts/wasm/{HermesToken,AgentRegistry,ReputationAnchor}.wasm`; deploy binary
     `contracts/bin/deploy_testnet.rs` (`--features livenet`) + `contracts/Odra.toml`; `HttpFacilitatorClient`
     drop-in (`apps/web/src/lib/facilitator-http.ts`); full runbook `docs/setup/testnet-deploy.md`.
-- **Remaining — Session J (needs YOUR funded testnet key):** follow `docs/setup/testnet-deploy.md` —
-  keygen + faucet-fund, set `ODRA_CASPER_LIVENET_*`, `cargo run --bin deploy_testnet --features livenet`,
-  record package hashes, run the casper-x402 facilitator, swap `DemoFacilitator`→`HttpFacilitatorClient`,
-  then the real EIP-712 signer spike (last, riskiest step). Interfaces unchanged → drop-in.
+- **Session J — contracts DEPLOYED to testnet ✅ (2026-07-06):** HermesToken/AgentRegistry/ReputationAnchor
+  live on `casper-test` (hashes in `casper-wallet.md` + `docs/contracts/README.md`). Deployer key
+  `casper-keys/secret_key.pem` (secp256k1, git-ignored), ~3188 CSPR left. Token hash wired into
+  `apps/web/.env.local` (`X402_PAYMENT_TOKEN_CONTRACT`). Gotchas solved + documented: wasm must be
+  MVP-lowered via `wasm-opt`; livenet needs `EVENTS_URL`; gas ≤ 812.5 CSPR block limit (token=800).
+- **Remaining — Session J finish (real settlement):** run the make-software casper-x402 facilitator
+  against HermesToken, set `X402_FACILITATOR_URL`, swap `DemoFacilitator`→`HttpFacilitatorClient`, then
+  the EIP-712 signer spike (real signature the facilitator accepts). Until then demo mode stays on.
 - Demo mode currently powers the app end-to-end (in-memory store, simulated settlement — labeled in UI).

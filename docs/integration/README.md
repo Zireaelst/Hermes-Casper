@@ -123,8 +123,22 @@ buyer's `auto_approve_limit` (20 HERMES in the demo) park for human approval ins
 ## Autonomous mode (in-app)
 
 The console `/agents` page runs the buyer agent autonomously: give it a **goal** + **budget**, and it
-discovers, decides (Claude when `ANTHROPIC_API_KEY` is set, deterministic policy otherwise), and settles
-on-chain — persisting a full reasoning trace (`agent_runs`). This is the same core the MCP tools call.
+discovers, decides (an LLM when configured, deterministic policy otherwise), and settles on-chain —
+persisting a full reasoning trace (`agent_runs`). This is the same core the MCP tools call.
 
-Set `ANTHROPIC_API_KEY` (and optionally `HERMES_AGENT_MODEL`, default `claude-sonnet-5`) in
-`apps/web/.env.local` to let Claude make the selection.
+The decision LLM is **provider-agnostic** (any OpenAI-compatible API). Set in `apps/web/.env.local`:
+
+```bash
+# OpenRouter (free tier — get a key at openrouter.ai/keys)
+HERMES_LLM_API_KEY=sk-or-...
+HERMES_LLM_BASE_URL=https://openrouter.ai/api/v1
+HERMES_LLM_MODEL=meta-llama/llama-3.3-70b-instruct:free
+
+# …or NVIDIA NIM (free credits — build.nvidia.com, no card)
+# HERMES_LLM_API_KEY=nvapi-...
+# HERMES_LLM_BASE_URL=https://integrate.api.nvidia.com/v1
+# HERMES_LLM_MODEL=meta/llama-3.1-70b-instruct
+```
+
+Anthropic native (`ANTHROPIC_API_KEY` + `HERMES_AGENT_MODEL`) also works as an alternative. With no key
+set, runs use a labeled deterministic policy agent — and still settle on-chain.

@@ -38,7 +38,7 @@ export default async function AgentsPage() {
     <div className="space-y-8">
       <PageHeader
         title="Autonomous Agents"
-        sub="Give the buyer agent a goal and a budget. It discovers services, decides (Claude, or a policy fallback), and settles on Casper — no human in the loop."
+        sub="Give the buyer agent a goal and a budget. It discovers services, decides (an LLM, or a policy fallback), and settles on Casper — no human in the loop."
       />
 
       <Card>
@@ -133,7 +133,7 @@ export default async function AgentsPage() {
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-subtle">
-                        <Badge>{trace.decidedBy === "claude" ? `Claude${trace.model ? ` · ${trace.model}` : ""}` : "policy agent"}</Badge>
+                        <Badge>{trace.decidedBy === "llm" ? `LLM${trace.model ? ` · ${trace.model}` : ""}` : "policy agent"}</Badge>
                         {trace.budgetHermes ? <span>budget {trace.budgetHermes} HERMES</span> : null}
                       </div>
                     </div>

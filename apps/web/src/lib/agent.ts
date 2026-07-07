@@ -24,7 +24,7 @@ export interface AgentRunTrace extends Record<string, unknown> {
   goal: string;
   budgetHermes: number;
   capability?: string;
-  decidedBy: "claude" | "rule";
+  decidedBy: "llm" | "rule";
   model?: string;
   steps: AgentStep[];
 }
@@ -53,23 +53,8 @@ function ruleSelect(candidates: ServiceView[]): ServiceView {
   )[0]!;
 }
 
-/** Ask Claude to choose. Returns null on any failure so the caller falls back. */
-async function claudeSelect(
-  goal: string,
-  candidates: ServiceView[],
-): Promise<{ listingId: string; rationale: string; model: string } | null> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return null;
-  const model = process.env.HERMES_AGENT_MODEL ?? MODEL_IDS.sonnet;
-  const menu = candidates.map((c) => ({
-    listingId: c.listing.id,
-    title: c.listing.title,
-    capability: c.listing.capability,
-    priceHermes: hermes(c.listing.priceAmount),
-    reputation: Number((c.reputation / 100).toFixed(1)),
-    seller: c.seller?.displayName,
-  }));
-  const prompt = `You are an autonomous procurement agent on Hermes, a marketplace where AI agents buy services and settle payment on the Casper blockchain.
+const PROMPT = (goal: string, menu: unknown) =>
+  `You are an autonomous procurement agent on Hermes, a marketplace where AI agents buy services and settle payment on the Casper blockchain.
 
 Goal: "${goal}"
 
@@ -80,30 +65,106 @@ Respond with ONLY a JSON object, no prose: {"listingId": "<id>", "rationale": "<
 Services:
 ${JSON.stringify(menu, null, 2)}`;
 
+function menuFor(candidates: ServiceView[]) {
+  return candidates.map((c) => ({
+    listingId: c.listing.id,
+    title: c.listing.title,
+    capability: c.listing.capability,
+    priceHermes: hermes(c.listing.priceAmount),
+    reputation: Number((c.reputation / 100).toFixed(1)),
+    seller: c.seller?.displayName,
+  }));
+}
+
+function parseChoice(text: string): { listingId: string; rationale: string } | null {
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return null;
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ model, max_tokens: 200, messages: [{ role: "user", content: prompt }] }),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-    const text = (data.content ?? [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text ?? "")
-      .join("");
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
     const parsed = JSON.parse(match[0]) as { listingId?: unknown; rationale?: unknown };
     if (typeof parsed.listingId !== "string") return null;
-    return { listingId: parsed.listingId, rationale: String(parsed.rationale ?? ""), model };
+    return { listingId: parsed.listingId, rationale: String(parsed.rationale ?? "") };
   } catch {
     return null;
   }
+}
+
+/**
+ * Ask an LLM to choose. Provider-agnostic:
+ *  - HERMES_LLM_API_KEY → any OpenAI-compatible endpoint (OpenRouter, NVIDIA NIM,
+ *    OpenAI, …) via HERMES_LLM_BASE_URL + HERMES_LLM_MODEL.
+ *  - else ANTHROPIC_API_KEY → Anthropic native.
+ * Returns null on any failure so the caller falls back to the deterministic rule.
+ */
+async function llmSelect(
+  goal: string,
+  candidates: ServiceView[],
+): Promise<{ listingId: string; rationale: string; model: string } | null> {
+  const prompt = PROMPT(goal, menuFor(candidates));
+
+  // 1. OpenAI-compatible (OpenRouter / NVIDIA NIM / OpenAI / …).
+  const llmKey = process.env.HERMES_LLM_API_KEY;
+  if (llmKey) {
+    const base = (process.env.HERMES_LLM_BASE_URL ?? "https://openrouter.ai/api/v1").replace(/\/$/, "");
+    const model = process.env.HERMES_LLM_MODEL ?? "meta-llama/llama-3.3-70b-instruct:free";
+    try {
+      const res = await fetch(`${base}/chat/completions`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${llmKey}`,
+          "content-type": "application/json",
+          // Optional attribution headers honoured by OpenRouter; ignored elsewhere.
+          "HTTP-Referer": "https://hermes.casper",
+          "X-Title": "Hermes",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 200,
+          temperature: 0.2,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          choices?: { message?: { content?: string } }[];
+        };
+        const text = data.choices?.[0]?.message?.content ?? "";
+        const choice = parseChoice(text);
+        if (choice) return { ...choice, model };
+      }
+    } catch {
+      // fall through
+    }
+    return null;
+  }
+
+  // 2. Anthropic native.
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey) {
+    const model = process.env.HERMES_AGENT_MODEL ?? MODEL_IDS.sonnet;
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ model, max_tokens: 200, messages: [{ role: "user", content: prompt }] }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { content?: { type: string; text?: string }[] };
+        const text = (data.content ?? [])
+          .filter((b) => b.type === "text")
+          .map((b) => b.text ?? "")
+          .join("");
+        const choice = parseChoice(text);
+        if (choice) return { ...choice, model };
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return null;
 }
 
 export async function runAgent(input: RunAgentInput): Promise<RunAgentResult> {
@@ -136,17 +197,17 @@ export async function runAgent(input: RunAgentInput): Promise<RunAgentResult> {
     return { runId, status: "failed", trace };
   }
 
-  const claude = await claudeSelect(input.goal, affordable);
+  const llm = await llmSelect(input.goal, affordable);
   let chosen: ServiceView | undefined;
-  let decidedBy: "claude" | "rule" = "rule";
+  let decidedBy: "llm" | "rule" = "rule";
   let model: string | undefined;
   let rationale = "";
-  if (claude) {
-    chosen = affordable.find((s) => s.listing.id === claude.listingId);
+  if (llm) {
+    chosen = affordable.find((s) => s.listing.id === llm.listingId);
     if (chosen) {
-      decidedBy = "claude";
-      model = claude.model;
-      rationale = claude.rationale;
+      decidedBy = "llm";
+      model = llm.model;
+      rationale = llm.rationale;
     }
   }
   if (!chosen) {
@@ -156,7 +217,7 @@ export async function runAgent(input: RunAgentInput): Promise<RunAgentResult> {
 
   steps.push({
     kind: "reason",
-    label: decidedBy === "claude" ? `Claude (${model}) reasoned` : "Policy agent reasoned",
+    label: decidedBy === "llm" ? `LLM (${model}) reasoned` : "Policy agent reasoned",
     detail: rationale,
   });
   steps.push({

@@ -24,9 +24,14 @@ declare global {
 // in the DOM before the CDN script initializes.
 export const CSPR_CLICK_UI_CONTAINER_ID = "csprclick-ui";
 
-// Public template appId — replace with the Hermes production appId before demo.
-// TODO(before-demo): provision a real CSPR.click appId + CSPR.cloud key.
-const CSPR_CLICK_APP_ID = "csprclick-template";
+// CSPR.click appId — configurable per environment. Defaults to the public
+// `csprclick-template` app, which functions on testnet; set
+// NEXT_PUBLIC_CSPR_CLICK_APP_ID to the Hermes production appId from the
+// CSPR.click dashboard when provisioned.
+const CSPR_CLICK_APP_ID = process.env.NEXT_PUBLIC_CSPR_CLICK_APP_ID ?? "csprclick-template";
+// Network the wallet flow targets (casper-test | casper). Drives which chain
+// CSPR.click surfaces to the connected wallet.
+const CSPR_CLICK_NETWORK = process.env.NEXT_PUBLIC_CASPER_NETWORK ?? "casper-test";
 const CSPR_CLICK_CDN = "https://cdn.cspr.click/ui/v2.0.0/csprclick-client-2.0.0.js";
 
 /**
@@ -49,10 +54,14 @@ export function useCsprClick(onConnected: (publicKey: string) => void) {
 
     // SDK + UI options must both be set before the CDN script loads, or the
     // client aborts initialization (references clickUIOptions during boot).
+    // Fields per CsprClickInitOptions (docs.cspr.click/reference/types): chainName
+    // selects Mainnet vs Testnet; contentMode "iframe" keeps sign-in in-app.
     window.clickSDKOptions = {
       appName: "Hermes",
       appId: CSPR_CLICK_APP_ID,
-      providers: ["casper-wallet", "ledger", "metamask-snap", "walletconnect"],
+      contentMode: "iframe",
+      chainName: CSPR_CLICK_NETWORK,
+      providers: ["casper-wallet", "ledger", "metamask-snap"],
     };
     window.clickUIOptions = {
       uiContainer: CSPR_CLICK_UI_CONTAINER_ID,

@@ -1,0 +1,23 @@
+{
+  "name": "@hermes/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hermes MCP server — lets Claude Code / any MCP client discover, buy, and publish agent services that settle on Casper.",
+  "bin": {
+    "hermes-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "typescript": "^5.7.3"
+  }
+}

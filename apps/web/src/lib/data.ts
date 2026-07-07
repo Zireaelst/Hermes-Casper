@@ -325,6 +325,103 @@ export async function getOrder(id: string): Promise<Order | null> {
   return new SupabaseRepo().getOrder(id);
 }
 
+// ── Agent + Listing creation (publish flow, mode-aware) ──
+const rand64 = () =>
+  Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
+    b.toString(16).padStart(2, "0"),
+  ).join("");
+
+export interface NewAgentInput {
+  displayName: string;
+  capabilities: string[];
+  casperAccountHash?: string;
+  publicKey?: string;
+}
+
+export async function createAgent(input: NewAgentInput): Promise<Agent> {
+  const accountHash = (input.casperAccountHash ?? `00${rand64()}`) as Agent["casperAccountHash"];
+  const publicKey = (input.publicKey ?? `02${rand64()}`) as Agent["publicKey"];
+  if (!supabaseEnabled()) {
+    const agent: Agent = {
+      id: crypto.randomUUID(),
+      ownerUserId: null,
+      kind: "external",
+      casperAccountHash: accountHash,
+      publicKey,
+      displayName: input.displayName,
+      capabilities: input.capabilities,
+      metadataUri: null,
+      status: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    const store = getStore();
+    store.agents.push(agent);
+    store.reputation[agent.id] = 300; // neutral starting reputation (×100)
+    return agent;
+  }
+  const { data, error } = await supabase()
+    .from("agents")
+    .insert({
+      kind: "external",
+      casper_account_hash: accountHash,
+      public_key: publicKey,
+      display_name: input.displayName,
+      capabilities: input.capabilities,
+      status: "active",
+    })
+    .select("*")
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "failed to create agent");
+  await supabase()
+    .from("reputation_scores")
+    .upsert({ agent_id: str(data.id), score: 300 });
+  return mapAgent(data);
+}
+
+export interface NewListingInput {
+  agentId: string;
+  title: string;
+  capability: string;
+  priceAmount: string;
+  asset: string;
+  terms?: Record<string, unknown>;
+}
+
+export async function createListing(input: NewListingInput): Promise<Listing> {
+  if (!supabaseEnabled()) {
+    const listing: Listing = {
+      id: crypto.randomUUID(),
+      agentId: input.agentId,
+      title: input.title,
+      capability: input.capability,
+      priceAmount: input.priceAmount,
+      asset: input.asset,
+      terms: input.terms ?? {},
+      status: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    getStore().listings.push(listing);
+    return listing;
+  }
+  const { data, error } = await supabase()
+    .from("listings")
+    .insert({
+      agent_id: input.agentId,
+      title: input.title,
+      capability: input.capability,
+      price_amount: input.priceAmount,
+      asset: input.asset,
+      terms: input.terms ?? {},
+      status: "active",
+    })
+    .select("*")
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "failed to create listing");
+  return mapListing(data);
+}
+
 export async function setOrderStatus(orderId: string, status: Order["status"]): Promise<void> {
   if (!supabaseEnabled()) {
     const order = getStore().orders.find((o) => o.id === orderId);
@@ -488,6 +585,96 @@ export async function loadArtifacts(): Promise<OnChainArtifact[]> {
   } catch {
     // Table not migrated yet (or transient) — fall back to the committed registry.
     return [...registryArtifacts()].sort(byCreatedDesc);
+  }
+}
+
+// ── Autonomous agent runs (trace of a buyer agent acting on its own) ──
+const BUYER_AGENT = "00000000-0000-4000-8000-000000000002";
+
+export type AgentRunStatus = "settled" | "awaiting_approval" | "failed";
+
+export interface AgentRunRecord {
+  id: string;
+  status: AgentRunStatus;
+  trace: Record<string, unknown>;
+  orderId: string | null;
+  createdAt: string;
+}
+
+// run_status enum in Postgres: running | waiting_human | completed | failed.
+const RUN_STATUS: Record<AgentRunStatus, string> = {
+  settled: "completed",
+  awaiting_approval: "waiting_human",
+  failed: "failed",
+};
+const RUN_STATUS_INV: Record<string, AgentRunStatus> = {
+  completed: "settled",
+  waiting_human: "awaiting_approval",
+  failed: "failed",
+  running: "failed",
+};
+
+const gRuns = globalThis as unknown as { __hermesRuns?: AgentRunRecord[] };
+function demoRuns(): AgentRunRecord[] {
+  gRuns.__hermesRuns ??= [];
+  return gRuns.__hermesRuns;
+}
+
+export async function recordAgentRun(input: {
+  status: AgentRunStatus;
+  trace: Record<string, unknown>;
+  orderId?: string | null;
+}): Promise<string> {
+  const id = crypto.randomUUID();
+  if (!supabaseEnabled()) {
+    demoRuns().unshift({
+      id,
+      status: input.status,
+      trace: input.trace,
+      orderId: input.orderId ?? null,
+      createdAt: now(),
+    });
+    return id;
+  }
+  try {
+    const { data, error } = await supabase()
+      .from("agent_runs")
+      .insert({
+        agent_id: BUYER_AGENT,
+        status: RUN_STATUS[input.status],
+        trace: { ...input.trace, orderId: input.orderId ?? null },
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data ? str(data.id) : id;
+  } catch (error) {
+    console.error("recordAgentRun failed", error);
+    return id;
+  }
+}
+
+export async function loadAgentRuns(limit = 20): Promise<AgentRunRecord[]> {
+  if (!supabaseEnabled()) return demoRuns().slice(0, limit);
+  try {
+    const { data, error } = await supabase()
+      .from("agent_runs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return (data ?? []).map((r: Row) => {
+      const trace = (r.trace as Record<string, unknown>) ?? {};
+      return {
+        id: str(r.id),
+        status: RUN_STATUS_INV[str(r.status)] ?? "failed",
+        trace,
+        orderId: (trace.orderId as string | null) ?? null,
+        createdAt: str(r.created_at),
+      };
+    });
+  } catch {
+    return [];
   }
 }
 

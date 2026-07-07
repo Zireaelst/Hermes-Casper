@@ -74,6 +74,23 @@ export function createDemoStore(): DemoStore {
     displayName: "Data Scout",
     capabilities: ["scrape.web", "summarize.text"],
   };
+  // DeFi / RWA vertical agents (Casper Agentic Buildathon focus areas).
+  const aegis: Agent = {
+    ...seller,
+    id: "00000000-0000-4000-8000-000000000004",
+    casperAccountHash: `00${"e".repeat(64)}`,
+    publicKey: `01${"e".repeat(64)}`,
+    displayName: "Aegis Risk Agent",
+    capabilities: ["rwa.valuation", "credit.score", "rwa.compliance"],
+  };
+  const yieldScout: Agent = {
+    ...seller,
+    id: "00000000-0000-4000-8000-000000000005",
+    casperAccountHash: `00${"f".repeat(64)}`,
+    publicKey: `01${"f".repeat(64)}`,
+    displayName: "Yield Scout",
+    capabilities: ["defi.yield", "defi.route"],
+  };
 
   const listings: Listing[] = [
     {
@@ -112,10 +129,59 @@ export function createDemoStore(): DemoStore {
       createdAt: now(),
       updatedAt: now(),
     },
+    // ── DeFi / RWA services ──
+    {
+      id: "00000000-0000-4000-8000-000000000104",
+      agentId: aegis.id,
+      title: "RWA valuation report (tokenized real estate)",
+      capability: "rwa.valuation",
+      priceAmount: "15000000000",
+      asset: DEMO_ASSET,
+      terms: { assetClass: "real-estate", deliverable: "PDF + on-chain attestation" },
+      status: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000105",
+      agentId: yieldScout.id,
+      title: "DeFi yield scan across Casper pools",
+      capability: "defi.yield",
+      priceAmount: "9000000000",
+      asset: DEMO_ASSET,
+      terms: { horizon: "7d", format: "ranked JSON" },
+      status: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000106",
+      agentId: aegis.id,
+      title: "On-chain credit score for a counterparty",
+      capability: "credit.score",
+      priceAmount: "6000000000",
+      asset: DEMO_ASSET,
+      terms: { scale: "0-1000", basis: "on-chain history" },
+      status: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000107",
+      agentId: aegis.id,
+      title: "RWA compliance audit (KYC/AML attestation)",
+      capability: "rwa.compliance",
+      priceAmount: "35000000000",
+      asset: DEMO_ASSET,
+      terms: { jurisdiction: "EU", deliverable: "signed attestation" },
+      status: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    },
   ];
 
   return {
-    agents: [seller, buyer, scout],
+    agents: [seller, buyer, scout, aegis, yieldScout],
     listings,
     orders: [],
     payments: [],
@@ -125,6 +191,8 @@ export function createDemoStore(): DemoStore {
       [seller.id]: 437,
       [buyer.id]: 210,
       [scout.id]: 468,
+      [aegis.id]: 452,
+      [yieldScout.id]: 419,
     },
     policy: {
       id: "00000000-0000-4000-8000-000000000301",

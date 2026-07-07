@@ -8,6 +8,7 @@ import { ThemeToggle } from "./ThemeToggle";
 
 const MOBILE_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/agents", label: "Agents" },
   { href: "/marketplace", label: "Market" },
   { href: "/orders", label: "Orders" },
   { href: "/approvals", label: "Approvals" },
@@ -16,6 +17,7 @@ const MOBILE_LINKS = [
 
 const TITLES: Record<string, string> = {
   dashboard: "Dashboard",
+  agents: "Autonomous Agents",
   marketplace: "Marketplace",
   orders: "Orders",
   approvals: "Approvals",

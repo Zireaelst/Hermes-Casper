@@ -491,6 +491,26 @@ export async function loadArtifacts(): Promise<OnChainArtifact[]> {
   }
 }
 
+/** Artifacts recorded for a single order (settlement attempts), newest first. */
+export async function artifactsForOrder(orderId: string): Promise<OnChainArtifact[]> {
+  if (!supabaseEnabled()) {
+    return demoArtifactStore()
+      .filter((a) => a.orderId === orderId)
+      .sort(byCreatedDesc);
+  }
+  try {
+    const { data, error } = await supabase()
+      .from("onchain_artifacts")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(mapArtifact);
+  } catch {
+    return [];
+  }
+}
+
 /** Persist a deploy / on-chain action. Never throws — logs and continues. */
 export async function recordArtifact(input: RecordArtifactInput): Promise<void> {
   if (!supabaseEnabled()) {

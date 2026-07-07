@@ -1,10 +1,11 @@
 import { formatReputation } from "@hermes/shared";
-import { ArrowUpRight, ExternalLink } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, ExternalLink, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AmountText, Card, Mono, StatusBadge } from "@/components/ui";
+import { AmountText, Card, Mono, StatusBadge, SubmitButton } from "@/components/ui";
 import { WorkflowCanvas } from "@/components/WorkflowCanvas";
-import { loadData } from "@/lib/data";
+import { retryOrder } from "@/lib/actions";
+import { artifactsForOrder, loadData } from "@/lib/data";
 import { deployUrl, shortHash } from "@/lib/explorer";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const receipt = payment ? store.receipts.find((r) => r.paymentId === payment.id) : undefined;
   const failed = order.status === "failed" || order.status === "cancelled";
   const currentStep = STEPS.findIndex((s) => s.key === order.status);
+
+  // Surface the recorded failure reason (if any) for failed orders.
+  let failureReason: string | undefined;
+  if (order.status === "failed") {
+    const arts = await artifactsForOrder(order.id);
+    const errored = arts.find((a) => typeof a.metadata.error === "string");
+    failureReason = errored ? String(errored.metadata.error) : undefined;
+  }
 
   return (
     <div className="space-y-6">
@@ -111,6 +120,29 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 review in Approvals
               </Link>
               .
+            </div>
+          ) : null}
+
+          {order.status === "failed" ? (
+            <div className="mt-5 rounded-lg border border-danger/40 bg-danger/10 p-4">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-danger">Settlement didn&apos;t complete</p>
+                  <p className="mt-1 text-xs text-text-muted">
+                    {failureReason
+                      ? failureReason
+                      : "The payment could not be settled. If running on-chain, ensure the facilitator is reachable, then retry."}
+                  </p>
+                  <form action={retryOrder} className="mt-3">
+                    <input type="hidden" name="orderId" value={order.id} />
+                    <SubmitButton size="sm" variant="danger" pendingLabel="Retrying…">
+                      <RotateCw className="size-3.5" aria-hidden />
+                      Retry settlement
+                    </SubmitButton>
+                  </form>
+                </div>
+              </div>
             </div>
           ) : null}
         </Card>

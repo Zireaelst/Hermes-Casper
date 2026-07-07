@@ -70,24 +70,38 @@ export function Topbar({ mode }: { mode: RuntimeMode }) {
           <span
             className={cn(
               "hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium sm:inline-flex",
-              mode.onChain
+              mode.status === "on-chain"
                 ? "border-success/30 bg-success/10 text-success"
-                : "border-warning/30 bg-warning/10 text-warning",
+                : mode.status === "facilitator-offline"
+                  ? "border-danger/30 bg-danger/10 text-danger"
+                  : "border-warning/30 bg-warning/10 text-warning",
             )}
-            title={mode.settlement}
+            title={
+              mode.status === "facilitator-offline"
+                ? "Chain settlement is configured but the facilitator is unreachable — start it before settling."
+                : mode.settlement
+            }
           >
             <span className="relative flex size-1.5">
-              {mode.onChain && (
+              {mode.status === "on-chain" && (
                 <span className="animate-ping-soft absolute inline-flex size-full rounded-full bg-success/70" />
               )}
               <span
                 className={cn(
                   "relative inline-flex size-1.5 rounded-full",
-                  mode.onChain ? "bg-success" : "bg-warning",
+                  mode.status === "on-chain"
+                    ? "bg-success"
+                    : mode.status === "facilitator-offline"
+                      ? "bg-danger"
+                      : "bg-warning",
                 )}
               />
             </span>
-            {mode.onChain ? "On-chain" : "Simulated"}
+            {mode.status === "on-chain"
+              ? "On-chain"
+              : mode.status === "facilitator-offline"
+                ? "Facilitator offline"
+                : "Simulated"}
           </span>
           <span className="hidden rounded-full border border-border bg-surface-raised px-2.5 py-1 font-mono text-xs text-text-muted md:inline-flex">
             {mode.network}

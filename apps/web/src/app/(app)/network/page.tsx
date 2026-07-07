@@ -107,13 +107,18 @@ export default async function NetworkPage() {
               <tbody className="divide-y divide-border">
                 {actions.map((a) => {
                   const hash = a.deployHash ?? a.txHash;
+                  const isFailed = a.metadata.status === "failed";
                   return (
                     <tr key={a.id} className="transition-colors hover:bg-surface-hover">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-text-strong">{a.label}</span>
                           <Badge>{KIND_LABEL[a.kind]}</Badge>
-                          {a.simulated ? (
+                          {isFailed ? (
+                            <span className="rounded-full border border-danger/30 bg-danger/10 px-2 py-0.5 text-xs text-danger">
+                              failed
+                            </span>
+                          ) : a.simulated ? (
                             <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-xs text-warning">
                               simulated
                             </span>

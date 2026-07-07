@@ -34,6 +34,24 @@ export function chainSettlementEnabled(): boolean {
   );
 }
 
+/**
+ * Liveness probe for the settlement facilitator. Chain settlement can be
+ * configured yet non-functional if the facilitator process is down — this lets
+ * the UI report the true state instead of a misleading "On-chain" badge.
+ */
+export async function facilitatorHealthy(): Promise<boolean> {
+  if (!facilitatorUrl) return false;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1500);
+    const res = await fetch(`${facilitatorUrl}/health`, { signal: controller.signal });
+    clearTimeout(timeout);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export interface ChainSettleResult {
   deployHash: string;
   payer: string;

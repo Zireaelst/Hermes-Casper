@@ -80,6 +80,21 @@ async function executePayment(order: Order, gateOverride?: PolicyGate): Promise<
     } catch (error) {
       await setOrderStatus(order.id, "failed");
       console.error("chain settlement failed", error);
+      await recordArtifact({
+        kind: "settlement",
+        label: listing.title,
+        orderId: order.id,
+        asset: order.asset,
+        amount: order.priceAmount,
+        simulated: false,
+        metadata: {
+          scheme: "exact",
+          network: "casper:casper-test",
+          onChain: true,
+          status: "failed",
+          error: errorMessage(error),
+        },
+      });
     }
     return;
   }
@@ -104,9 +119,25 @@ async function executePayment(order: Order, gateOverride?: PolicyGate): Promise<
       return;
     }
     await setOrderStatus(order.id, "failed");
-    if (error instanceof PolicyDeniedError || error instanceof SettlementError) return;
+    if (error instanceof SettlementError) {
+      await recordArtifact({
+        kind: "settlement",
+        label: listing.title,
+        orderId: order.id,
+        asset: order.asset,
+        amount: order.priceAmount,
+        simulated: true,
+        metadata: { scheme: "exact", onChain: false, status: "failed", error: errorMessage(error) },
+      });
+      return;
+    }
+    if (error instanceof PolicyDeniedError) return;
     throw error;
   }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 /** Persist a real on-chain settlement as Payment + Receipt (marks order settled). */
@@ -198,6 +229,16 @@ export async function approveSpend(formData: FormData): Promise<void> {
   await executePayment(order, humanApprovedGate);
   revalidatePath("/", "layout");
   redirect(`/orders/${order.id}`);
+}
+
+/** Order detail: re-attempt settlement for a failed order (fresh nonce, no double-spend). */
+export async function retryOrder(formData: FormData): Promise<void> {
+  const orderId = String(formData.get("orderId") ?? "");
+  const order = await getOrder(orderId);
+  if (!order || order.status !== "failed") return;
+  await executePayment(order);
+  revalidatePath("/", "layout");
+  redirect(`/orders/${orderId}`);
 }
 
 /** Approvals queue: reject a parked spend. */

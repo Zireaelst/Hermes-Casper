@@ -1,32 +1,44 @@
-import Link from "next/link";
-import { NavLink } from "@/components/ui";
+import { formatReputation } from "@hermes/shared";
+import { Sidebar } from "@/components/console/Sidebar";
+import { Topbar } from "@/components/console/Topbar";
+import { loadData } from "@/lib/data";
+import { getRuntimeMode } from "@/lib/mode";
 
-// Dark console shell — unchanged from the previous root layout. The light-first
-// design system (design-system.md) applies to the marketing surface only this
-// session; migrating this console is a tracked follow-up (see NEXT_SESSION.md).
-export default function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+const BUYER_AGENT_ID = "00000000-0000-4000-8000-000000000002";
+
+// Console shell — light-first design system with a working dark toggle
+// (next-themes). Live status chips reflect the real runtime configuration.
+export default async function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const mode = getRuntimeMode();
+
+  // Resiliently derive shell data; never let a data hiccup blank the console.
+  let pendingApprovals = 0;
+  let agentName = "Research Agent";
+  let agentReputation = formatReputation(210);
+  try {
+    const data = await loadData();
+    pendingApprovals = data.approvals.length;
+    const buyer = data.agents.find((a) => a.id === BUYER_AGENT_ID) ?? data.agents[0];
+    if (buyer) {
+      agentName = buyer.displayName;
+      agentReputation = formatReputation(data.reputation[buyer.id] ?? 0);
+    }
+  } catch {
+    // fall back to defaults above
+  }
+
   return (
-    <div className="flex min-h-full">
-      <aside className="sticky top-0 flex h-screen w-56 shrink-0 flex-col gap-1 border-r border-border p-4">
-        <Link href="/dashboard" className="mb-6 flex items-center gap-2 px-3">
-          <span className="grid size-7 place-items-center rounded-lg bg-accent font-bold text-accent-fg">
-            H
-          </span>
-          <span className="font-semibold tracking-tight">Hermes</span>
-        </Link>
-        <NavLink href="/dashboard">Dashboard</NavLink>
-        <NavLink href="/marketplace">Marketplace</NavLink>
-        <NavLink href="/orders">Orders</NavLink>
-        <NavLink href="/approvals">Approvals</NavLink>
-        <div className="mt-auto rounded-lg border border-border bg-surface-raised p-3 text-xs text-text-muted">
-          <div className="mb-1 flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-warning" aria-hidden />
-            demo mode
-          </div>
-          casper:casper-test · simulated settlement
-        </div>
-      </aside>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-8 py-8">{children}</main>
+    <div className="flex min-h-screen bg-surface">
+      <Sidebar
+        pendingApprovals={pendingApprovals}
+        agentName={agentName}
+        agentReputation={agentReputation}
+        dataSource={mode.dataSource}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar mode={mode} />
+        <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">{children}</main>
+      </div>
     </div>
   );
 }

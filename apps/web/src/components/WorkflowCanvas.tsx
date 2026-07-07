@@ -13,12 +13,28 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
 
-/** Node lifecycle state → design-system status color (design-system.md §6). */
+/** Node lifecycle state → design-system status token (theme-aware, design-system.md §6). */
 const STATE_STYLE: Record<string, { border: string; text: string; dot: string }> = {
-  done: { border: "#4ade8099", text: "#4ade80", dot: "#4ade80" },
-  active: { border: "#fbbf2499", text: "#fbbf24", dot: "#fbbf24" },
-  failed: { border: "#f8717199", text: "#f87171", dot: "#f87171" },
-  idle: { border: "#232936", text: "#8b93a7", dot: "#8b93a7" },
+  done: {
+    border: "color-mix(in srgb, var(--color-success) 55%, transparent)",
+    text: "var(--color-success)",
+    dot: "var(--color-success)",
+  },
+  active: {
+    border: "color-mix(in srgb, var(--color-warning) 55%, transparent)",
+    text: "var(--color-warning)",
+    dot: "var(--color-warning)",
+  },
+  failed: {
+    border: "color-mix(in srgb, var(--color-danger) 55%, transparent)",
+    text: "var(--color-danger)",
+    dot: "var(--color-danger)",
+  },
+  idle: {
+    border: "var(--color-border)",
+    text: "var(--color-text-subtle)",
+    dot: "var(--color-text-subtle)",
+  },
 };
 
 type NodeState = keyof typeof STATE_STYLE;
@@ -29,16 +45,12 @@ function StageNode({ data }: NodeProps) {
   const s = STATE_STYLE[state] ?? STATE_STYLE.idle!;
   return (
     <div
-      className="rounded-lg px-3 py-2 text-xs font-mono"
-      style={{ border: `1px solid ${s.border}`, color: s.text, background: "#12161f" }}
+      className="rounded-lg px-3 py-2 font-mono text-xs shadow-sm"
+      style={{ border: `1px solid ${s.border}`, color: s.text, background: "var(--color-surface-raised)" }}
     >
       <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
       <span className="inline-flex items-center gap-1.5">
-        <span
-          className="size-1.5 rounded-full"
-          style={{ background: s.dot }}
-          aria-hidden
-        />
+        <span className="size-1.5 rounded-full" style={{ background: s.dot }} aria-hidden />
         {label}
       </span>
       <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
@@ -88,13 +100,13 @@ export function WorkflowCanvas({ orderStatus, paymentStatus }: WorkflowCanvasPro
       source: STAGES[i]!,
       target: label,
       animated: states[i + 1] === "active",
-      style: { stroke: "#232936" },
+      style: { stroke: "var(--color-border-strong)" },
     }));
     return { nodes, edges };
   }, [orderStatus, paymentStatus]);
 
   return (
-    <div className="h-40 w-full overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="h-44 w-full overflow-hidden rounded-xl border border-border bg-surface-raised">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -109,7 +121,7 @@ export function WorkflowCanvas({ orderStatus, paymentStatus }: WorkflowCanvasPro
         zoomOnScroll={false}
         preventScrolling={false}
       >
-        <Background color="#232936" gap={20} />
+        <Background color="var(--color-border-strong)" gap={20} />
         <Controls showInteractive={false} />
       </ReactFlow>
     </div>

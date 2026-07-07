@@ -22,3 +22,14 @@ skill `odra-contracts`. Deploy how-to: [setup/testnet-deploy.md](../setup/testne
 - **✅ Real on-chain x402 settlement proven** end-to-end (casper-x402 client + facilitator, 7.5 HERMES
   `transfer_with_authorization`): tx `66151d11dc3b2d6ef356e243e885e21b10f4fefb1c51079d8eef48fbabef95bf`.
 - Explorer: `https://testnet.cspr.live/transaction/<tx>`. Deployer: see `casper-wallet.md`.
+
+## Persisted on-chain artifacts (durable, not demo state)
+These deploy hashes / contract addresses are now recorded in code + DB so they can be
+referenced and managed rather than living only here:
+- **Source of truth (committed):** `packages/shared/src/deployments.ts` — package hashes,
+  deploy txs, proven settlement, network + explorer. Import `deploymentFor(network)` / `tokenAssetId()`.
+- **Ledger (Postgres):** `onchain_artifacts` table — migration `supabase/migrations/20260707000001_onchain_artifacts.sql`
+  (seeded with the contracts above + the proven settlement). Every settlement is appended
+  (`apps/web/src/lib/data.ts` → `recordArtifact`), with richer metadata on each Receipt.
+- **Surface:** the console **Network** page (`/network`) lists contracts + all on-chain activity
+  with cspr.live links. Network is env-driven via `NEXT_PUBLIC_CASPER_NETWORK`.

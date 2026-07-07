@@ -5,6 +5,7 @@ import {
   DemoSigner,
   SettlementError,
   addAmounts,
+  deploymentFor,
 } from "@hermes/shared";
 import type { FacilitatorClient, PolicyGate, Repo, SignerClient } from "@hermes/shared";
 import type { Agent, Listing, Order, Payment, Receipt, SpendPolicy } from "@hermes/types";
@@ -346,4 +347,193 @@ export function clearApprovalDemo(orderId: string): void {
   if (supabaseEnabled()) return;
   const store = getStore();
   store.approvals = store.approvals.filter((a) => a.orderId !== orderId);
+}
+
+// ── On-chain artifact ledger ──────────────────────────────────────────────────
+// Durable record of deploys / on-chain actions. Backed by the `onchain_artifacts`
+// table in Supabase mode; falls back to the committed registry (deployments.ts)
+// when the table isn't migrated yet, and augments demo mode with in-memory
+// settlements so nothing on-chain is treated as throwaway demo state.
+
+const CASPER_NETWORK = process.env.NEXT_PUBLIC_CASPER_NETWORK ?? "casper-test";
+
+export type OnChainArtifactKind =
+  | "contract_deploy"
+  | "settlement"
+  | "mint"
+  | "registry_write"
+  | "reputation_anchor";
+
+export interface OnChainArtifact {
+  id: string;
+  kind: OnChainArtifactKind;
+  label: string;
+  network: string;
+  contractPackageHash: string | null;
+  deployHash: string | null;
+  txHash: string | null;
+  address: string | null;
+  amount: string | null;
+  asset: string | null;
+  orderId: string | null;
+  paymentId: string | null;
+  simulated: boolean;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface RecordArtifactInput {
+  kind: OnChainArtifactKind;
+  label: string;
+  deployHash?: string | null;
+  txHash?: string | null;
+  contractPackageHash?: string | null;
+  address?: string | null;
+  amount?: string | null;
+  asset?: string | null;
+  orderId?: string | null;
+  paymentId?: string | null;
+  simulated?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+const byCreatedDesc = (a: OnChainArtifact, b: OnChainArtifact) =>
+  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
+/** Deploys + proven settlement from the committed registry (the durable fallback). */
+function registryArtifacts(): OnChainArtifact[] {
+  const reg = deploymentFor(CASPER_NETWORK);
+  const arts: OnChainArtifact[] = reg.contracts.map((c) => ({
+    id: `contract:${c.name}`,
+    kind: "contract_deploy",
+    label: c.name,
+    network: reg.network,
+    contractPackageHash: c.packageHash,
+    deployHash: null,
+    txHash: null,
+    address: c.packageHash,
+    amount: null,
+    asset: null,
+    orderId: null,
+    paymentId: null,
+    simulated: false,
+    metadata: { standards: c.standards, role: c.role, deployTx: c.deployTxShort ?? null },
+    createdAt: reg.deployedAt ?? now(),
+  }));
+  if (reg.provenSettlementTx) {
+    const token = reg.contracts.find((c) => c.name === "HermesToken");
+    arts.push({
+      id: `settlement:${reg.provenSettlementTx}`,
+      kind: "settlement",
+      label: "Proven x402 settlement",
+      network: reg.network,
+      contractPackageHash: token?.packageHash ?? null,
+      deployHash: reg.provenSettlementTx,
+      txHash: reg.provenSettlementTx,
+      address: null,
+      amount: "7500000000",
+      asset: token ? token.packageHash.replace(/^hash-/, "") : null,
+      orderId: null,
+      paymentId: null,
+      simulated: false,
+      metadata: {
+        scheme: "exact",
+        onChain: true,
+        note: "transfer_with_authorization proven end-to-end.",
+      },
+      createdAt: reg.deployedAt ?? now(),
+    });
+  }
+  return arts;
+}
+
+const gArtifacts = globalThis as unknown as { __hermesArtifacts?: OnChainArtifact[] };
+function demoArtifactStore(): OnChainArtifact[] {
+  gArtifacts.__hermesArtifacts ??= [];
+  return gArtifacts.__hermesArtifacts;
+}
+
+function mapArtifact(r: Row): OnChainArtifact {
+  return {
+    id: str(r.id),
+    kind: r.kind as OnChainArtifactKind,
+    label: str(r.label),
+    network: str(r.network),
+    contractPackageHash: (r.contract_package_hash as string | null) ?? null,
+    deployHash: (r.deploy_hash as string | null) ?? null,
+    txHash: (r.tx_hash as string | null) ?? null,
+    address: (r.address as string | null) ?? null,
+    amount: r.amount != null ? str(r.amount) : null,
+    asset: (r.asset as string | null) ?? null,
+    orderId: (r.order_id as string | null) ?? null,
+    paymentId: (r.payment_id as string | null) ?? null,
+    simulated: Boolean(r.simulated),
+    metadata: (r.metadata as Record<string, unknown>) ?? {},
+    createdAt: str(r.created_at),
+  };
+}
+
+/** All recorded on-chain artifacts, newest first. Resilient to a missing table. */
+export async function loadArtifacts(): Promise<OnChainArtifact[]> {
+  if (!supabaseEnabled()) {
+    return [...registryArtifacts(), ...demoArtifactStore()].sort(byCreatedDesc);
+  }
+  try {
+    const { data, error } = await supabase()
+      .from("onchain_artifacts")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(mapArtifact);
+  } catch {
+    // Table not migrated yet (or transient) — fall back to the committed registry.
+    return [...registryArtifacts()].sort(byCreatedDesc);
+  }
+}
+
+/** Persist a deploy / on-chain action. Never throws — logs and continues. */
+export async function recordArtifact(input: RecordArtifactInput): Promise<void> {
+  if (!supabaseEnabled()) {
+    demoArtifactStore().unshift({
+      id: crypto.randomUUID(),
+      kind: input.kind,
+      label: input.label,
+      network: CASPER_NETWORK,
+      contractPackageHash: input.contractPackageHash ?? null,
+      deployHash: input.deployHash ?? null,
+      txHash: input.txHash ?? input.deployHash ?? null,
+      address: input.address ?? null,
+      amount: input.amount ?? null,
+      asset: input.asset ?? null,
+      orderId: input.orderId ?? null,
+      paymentId: input.paymentId ?? null,
+      simulated: input.simulated ?? false,
+      metadata: input.metadata ?? {},
+      createdAt: now(),
+    });
+    return;
+  }
+  try {
+    const { error } = await supabase().from("onchain_artifacts").insert({
+      kind: input.kind,
+      label: input.label,
+      network: CASPER_NETWORK,
+      contract_package_hash: input.contractPackageHash ?? null,
+      deploy_hash: input.deployHash ?? null,
+      tx_hash: input.txHash ?? input.deployHash ?? null,
+      address: input.address ?? null,
+      amount: input.amount ?? null,
+      asset: input.asset ?? null,
+      order_id: input.orderId ?? null,
+      payment_id: input.paymentId ?? null,
+      simulated: input.simulated ?? false,
+      metadata: input.metadata ?? {},
+    });
+    if (error && error.code !== "23505") {
+      // 23505 = duplicate deploy_hash (already recorded) — safe to ignore.
+      console.error("recordArtifact insert failed", error.message);
+    }
+  } catch (error) {
+    console.error("recordArtifact failed (table not migrated?)", error);
+  }
 }

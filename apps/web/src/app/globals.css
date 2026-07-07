@@ -1,52 +1,148 @@
 @import "tailwindcss";
 
-/* Hermes design tokens — docs/product/design-system.md.
- * Default (root) palette is the dark console; the light-first marketing surface
- * overrides the same semantic tokens under `.theme-light` (see below). Components
- * reference semantic tokens only — never raw hex. */
+/* Class-based dark mode (driven by next-themes → <html class="dark">). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Hermes design tokens — docs/product/design-system.md.
+ * Light-first: the DEFAULT palette below is light; `.dark` overrides the same
+ * semantic tokens. Components reference tokens only — never raw hex.
+ * ──────────────────────────────────────────────────────────────────────────── */
 @theme {
-  --color-surface: #0b0e14;
+  /* Surfaces */
+  --color-surface: #ffffff;
+  --color-surface-raised: #fafbf9;
+  --color-surface-sunken: #f1f3f1;
+  --color-surface-hover: #f3f5f2;
+  --color-surface-overlay: #ffffff;
+
+  /* Lines */
+  --color-border: #e7eae4;
+  --color-border-strong: #d7dcd4;
+
+  /* Text */
+  --color-text: #1c2e1e;
+  --color-text-strong: #0a140b;
+  --color-text-muted: #5a635a;
+  --color-text-subtle: #738273;
+
+  /* Brand accent */
+  --color-accent: #1c2e1e;
+  --color-accent-hover: #26402a;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #4d6d47;
+  --color-accent-subtle: #e9ede8;
+
+  /* Focus + selection */
+  --color-focus: #1c2e1e;
+  --color-selection: #eaece9;
+
+  /* Status */
+  --color-success: #157f3c;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+  --color-info: #1d4ed8;
+
+  /* Typography */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Radius */
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+
+  /* Motion */
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Light palette values, factored out so both :root and .theme-light share them.
+ * .theme-light lets the marketing surface stay light even when next-themes puts
+ * `.dark` on <html> (system-dark users) — the nearer selector wins the cascade. */
+:root,
+.theme-light {
+  color-scheme: light;
+  --shadow-card: 0 1px 2px rgba(16, 24, 16, 0.04), 0 10px 30px -18px rgba(16, 24, 16, 0.18);
+  --shadow-pop: 0 8px 40px -12px rgba(16, 24, 16, 0.22);
+  --backdrop-grid: rgba(28, 46, 30, 0.05);
+}
+
+/* Re-assert the light token values on .theme-light so it overrides an ancestor
+ * `.dark`. (:root gets these from @theme; .theme-light must state them itself.) */
+.theme-light {
+  --color-surface: #ffffff;
+  --color-surface-raised: #fafbf9;
+  --color-surface-sunken: #f1f3f1;
+  --color-surface-hover: #f3f5f2;
+  --color-surface-overlay: #ffffff;
+  --color-border: #e7eae4;
+  --color-border-strong: #d7dcd4;
+  --color-text: #1c2e1e;
+  --color-text-strong: #0a140b;
+  --color-text-muted: #5a635a;
+  --color-text-subtle: #738273;
+  --color-accent: #1c2e1e;
+  --color-accent-hover: #26402a;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #4d6d47;
+  --color-accent-subtle: #e9ede8;
+  --color-focus: #1c2e1e;
+  --color-selection: #eaece9;
+  --color-success: #157f3c;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+  --color-info: #1d4ed8;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --color-surface: #090c11;
   --color-surface-raised: #12161f;
-  --color-surface-sunken: #1a1f2b;
+  --color-surface-sunken: #161b26;
   --color-surface-hover: #1a1f2b;
+  --color-surface-overlay: #141924;
+
   --color-border: #232936;
+  --color-border-strong: #313a4c;
+
   --color-text: #e6e9f0;
   --color-text-strong: #ffffff;
   --color-text-muted: #8b93a7;
   --color-text-subtle: #6b7280;
-  --color-accent: #6c8cff;
-  --color-accent-fg: #0b0e14;
-  --color-accent-soft: #6c8cff;
-  --color-focus: #6c8cff;
-  --color-selection: #2a3350;
+
+  --color-accent: #5bd48f;
+  --color-accent-hover: #6fe0a0;
+  --color-accent-fg: #04140b;
+  --color-accent-soft: #8fd3ac;
+  --color-accent-subtle: #14241c;
+
+  --color-focus: #5bd48f;
+  --color-selection: #1d3a2a;
+
   --color-success: #4ade80;
   --color-warning: #fbbf24;
   --color-danger: #f87171;
   --color-info: #60a5fa;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -16px rgba(0, 0, 0, 0.7);
+  --shadow-pop: 0 12px 48px -12px rgba(0, 0, 0, 0.75);
+  --backdrop-grid: rgba(230, 233, 240, 0.045);
 }
 
-/* Light-first marketing palette — maps the hero spec's colors onto the same
- * semantic tokens (design-system.md §2). Applied to the (marketing) subtree. */
-.theme-light {
-  --color-surface: #ffffff;
-  --color-surface-raised: #fafbf9;
-  --color-surface-sunken: #f1f3f1;
-  --color-surface-hover: #f1f3f1;
-  --color-border: #f1f3f1;
-  --color-text: #1c2e1e;
-  --color-text-strong: #000000;
-  --color-text-muted: #5a635a;
-  --color-text-subtle: #738273;
-  --color-accent: #1c2e1e;
-  --color-accent-fg: #ffffff;
-  --color-accent-soft: #4d6d47;
-  --color-focus: #1c2e1e;
-  --color-selection: #eaece9;
+html {
+  scroll-behavior: smooth;
+}
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+/* Offset in-page anchor targets so the fixed marketing nav doesn't cover them. */
+:where(section[id]) {
+  scroll-margin-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
@@ -56,15 +152,25 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-accent) 35%, transparent);
-}
-
-.theme-light ::selection {
   background: var(--color-selection);
   color: var(--color-accent);
 }
 
-/* Typewriter cursor — hero spec §1. */
+/* Elevation helpers (theme-aware via CSS vars). */
+.shadow-card {
+  box-shadow: var(--shadow-card);
+}
+.shadow-pop {
+  box-shadow: var(--shadow-pop);
+}
+
+/* Dotted brand backdrop used behind marketing + shell surfaces. */
+.bg-grid {
+  background-image: radial-gradient(var(--backdrop-grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────────────────────── */
 @keyframes blink {
   0%,
   100% {
@@ -78,8 +184,122 @@ body {
   animation: blink 1s step-end infinite;
 }
 
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.5s var(--ease-emphasized) both;
+}
+
+/* Skeleton loading surface. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface-sunken);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-surface-hover) 80%, transparent),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
+
+/* ── Premium marketing / console utilities ─────────────────────────────────── */
+
+/* Accent-tinted gradient text for headline emphasis. */
+.text-gradient {
+  background: linear-gradient(
+    120deg,
+    var(--color-accent) 0%,
+    var(--color-accent-soft) 55%,
+    var(--color-accent) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Soft radial glow used behind the hero + section highlights. */
+.glow-accent {
+  background: radial-gradient(
+    60% 60% at 70% 30%,
+    color-mix(in srgb, var(--color-accent-soft) 22%, transparent),
+    transparent 70%
+  );
+}
+
+/* Hairline gradient divider. */
+.rule-fade {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-border-strong),
+    transparent
+  );
+}
+
+/* Larger dotted backdrop for full-bleed sections. */
+.bg-grid-lg {
+  background-image: radial-gradient(var(--backdrop-grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Marquee for the trust strip. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 32s linear infinite;
+}
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* Live-pulse dot for status indicators. */
+@keyframes ping-soft {
+  75%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+.animate-ping-soft {
+  animation: ping-soft 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-blink {
+  .animate-blink,
+  .animate-fade-up,
+  .animate-marquee,
+  .animate-ping-soft,
+  .skeleton::after {
     animation: none;
   }
 }

@@ -6,4 +6,5 @@ export * from "./adapters";
 export * from "./x402-codec";
 export * from "./policy";
 export * from "./orchestrator";
+export * from "./deployments";
 export * from "./demo";

@@ -19,6 +19,7 @@ import {
   getOrder,
   loadData,
   parkApprovalDemo,
+  recordArtifact,
   setOrderStatus,
 } from "./data";
 import { chainSettlementEnabled, settleOrderOnChain, type ChainSettleResult } from "./x402-real";
@@ -57,6 +58,25 @@ async function executePayment(order: Order, gateOverride?: PolicyGate): Promise<
     try {
       const result = await settleOrderOnChain(order, seller.casperAccountHash);
       await recordChainSettlement(deps.repo, order, result);
+      await recordArtifact({
+        kind: "settlement",
+        label: listing.title,
+        deployHash: result.deployHash,
+        txHash: result.deployHash,
+        contractPackageHash: order.asset ? `hash-${order.asset}` : null,
+        amount: result.amount,
+        asset: order.asset,
+        orderId: order.id,
+        simulated: false,
+        metadata: {
+          scheme: "exact",
+          network: "casper:casper-test",
+          onChain: true,
+          payer: result.payer,
+          payee: result.payee,
+          nonce: result.nonce,
+        },
+      });
     } catch (error) {
       await setOrderStatus(order.id, "failed");
       console.error("chain settlement failed", error);
@@ -76,6 +96,7 @@ async function executePayment(order: Order, gateOverride?: PolicyGate): Promise<
       agentKeyRef: "kms://demo-buyer",
     });
     // repo.markSettled set order + payment to settled
+    await recordSimulatedSettlement(order.id, listing.title);
   } catch (error) {
     if (error instanceof RequiresHumanApprovalError) {
       await setOrderStatus(order.id, "authorized"); // parked awaiting human approval
@@ -118,10 +139,42 @@ async function recordChainSettlement(
     payer: result.payer as Receipt["payer"],
     payee: result.payee as Receipt["payee"],
     settledAt: iso,
-    raw: { transaction: result.deployHash, network: "casper:casper-test", onChain: true },
+    raw: {
+      transaction: result.deployHash,
+      network: "casper:casper-test",
+      onChain: true,
+      scheme: "exact",
+      asset: order.asset,
+      payer: result.payer,
+      payee: result.payee,
+      nonce: result.nonce,
+      explorer: `https://testnet.cspr.live/deploy/${result.deployHash}`,
+    },
     createdAt: iso,
   };
   await repo.markSettled(payment.id, receipt);
+}
+
+/** Record a simulated (off-chain) settlement in the artifact ledger. */
+async function recordSimulatedSettlement(orderId: string, label: string): Promise<void> {
+  const data = await loadData();
+  const payment = data.payments.find((p) => p.orderId === orderId);
+  const receipt = payment
+    ? data.receipts.find((r) => r.paymentId === payment.id)
+    : undefined;
+  if (!receipt) return;
+  await recordArtifact({
+    kind: "settlement",
+    label,
+    deployHash: receipt.deployHash,
+    txHash: receipt.deployHash,
+    amount: receipt.amount,
+    asset: payment?.asset ?? null,
+    orderId,
+    paymentId: payment?.id ?? null,
+    simulated: true,
+    metadata: { scheme: "exact", network: "casper:casper-test", onChain: false, simulated: true },
+  });
 }
 
 /** Marketplace "Buy now": create Order → policy gate → pay → settle (or park for HITL). */

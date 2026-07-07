@@ -9,7 +9,7 @@ const BUYER_AGENT_ID = "00000000-0000-4000-8000-000000000002";
 // Console shell — light-first design system with a working dark toggle
 // (next-themes). Live status chips reflect the real runtime configuration.
 export default async function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const mode = getRuntimeMode();
+  const mode = await getRuntimeMode();
 
   // Resiliently derive shell data; never let a data hiccup blank the console.
   let pendingApprovals = 0;

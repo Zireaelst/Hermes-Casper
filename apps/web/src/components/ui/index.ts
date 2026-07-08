@@ -2,6 +2,7 @@ export { AmountText } from "./amount-text";
 export { Badge, CapabilityTag, StatusBadge } from "./badge";
 export { Button, buttonVariants, type ButtonProps } from "./button";
 export { Card } from "./card";
+export { CodeBlock } from "./code-block";
 export { EmptyState } from "./empty-state";
 export { Meter } from "./meter";
 export { Mono } from "./mono";

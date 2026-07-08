@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, LayoutDashboard, Network, ShieldCheck, ShoppingBag, SquareStack } from "lucide-react";
+import { Bot, LayoutDashboard, Network, Plug, ShieldCheck, ShoppingBag, SquareStack } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -47,7 +47,10 @@ export function Sidebar({ pendingApprovals, agentName, agentReputation, dataSour
     },
     {
       heading: "Infrastructure",
-      items: [{ href: "/network", label: "Network", icon: Network }],
+      items: [
+        { href: "/network", label: "Network", icon: Network },
+        { href: "/integrations", label: "Integrations", icon: Plug },
+      ],
     },
   ];
 

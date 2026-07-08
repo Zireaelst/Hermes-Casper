@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { RuntimeMode } from "@/lib/mode";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { WalletButton } from "./WalletButton";
 
 const MOBILE_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -13,6 +14,7 @@ const MOBILE_LINKS = [
   { href: "/orders", label: "Orders" },
   { href: "/approvals", label: "Approvals" },
   { href: "/network", label: "Network" },
+  { href: "/integrations", label: "Integrations" },
 ];
 
 const TITLES: Record<string, string> = {
@@ -22,6 +24,7 @@ const TITLES: Record<string, string> = {
   orders: "Orders",
   approvals: "Approvals",
   network: "Network",
+  integrations: "Integrations",
 };
 
 function useCrumbs(pathname: string): string[] {
@@ -108,6 +111,7 @@ export function Topbar({ mode }: { mode: RuntimeMode }) {
           <span className="hidden rounded-full border border-border bg-surface-raised px-2.5 py-1 font-mono text-xs text-text-muted md:inline-flex">
             {mode.network}
           </span>
+          <WalletButton />
           <ThemeToggle />
         </div>
       </div>

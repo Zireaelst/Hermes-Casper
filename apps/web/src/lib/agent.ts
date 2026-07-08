@@ -105,34 +105,44 @@ async function llmSelect(
   const llmKey = process.env.HERMES_LLM_API_KEY;
   if (llmKey) {
     const base = (process.env.HERMES_LLM_BASE_URL ?? "https://openrouter.ai/api/v1").replace(/\/$/, "");
-    const model = process.env.HERMES_LLM_MODEL ?? "meta-llama/llama-3.3-70b-instruct:free";
-    try {
-      const res = await fetch(`${base}/chat/completions`, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${llmKey}`,
-          "content-type": "application/json",
-          // Optional attribution headers honoured by OpenRouter; ignored elsewhere.
-          "HTTP-Referer": "https://hermes.casper",
-          "X-Title": "Hermes",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 200,
-          temperature: 0.2,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-      if (res.ok) {
-        const data = (await res.json()) as {
-          choices?: { message?: { content?: string } }[];
-        };
-        const text = data.choices?.[0]?.message?.content ?? "";
-        const choice = parseChoice(text);
-        if (choice) return { ...choice, model };
+    const model = process.env.HERMES_LLM_MODEL ?? "nvidia/nemotron-3-super-120b-a12b:free";
+    // Free models get transiently rate-limited (429); retry a couple of times
+    // with a bounded backoff before falling back to the deterministic agent.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(`${base}/chat/completions`, {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${llmKey}`,
+            "content-type": "application/json",
+            // Optional attribution headers honoured by OpenRouter; ignored elsewhere.
+            "HTTP-Referer": "https://hermes.casper",
+            "X-Title": "Hermes",
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 200,
+            temperature: 0.2,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+          const text = data.choices?.[0]?.message?.content ?? "";
+          const choice = parseChoice(text);
+          if (choice) return { ...choice, model };
+          return null; // responded but unparseable — don't spin
+        }
+        if (res.status === 429 || res.status >= 500) {
+          const retryAfter = Number(res.headers.get("retry-after"));
+          const waitMs = Math.min(Number.isFinite(retryAfter) ? retryAfter * 1000 : 2000, 5000);
+          await new Promise((r) => setTimeout(r, waitMs));
+          continue;
+        }
+        return null; // hard error (401/404) — fall back
+      } catch {
+        await new Promise((r) => setTimeout(r, 1500));
       }
-    } catch {
-      // fall through
     }
     return null;
   }

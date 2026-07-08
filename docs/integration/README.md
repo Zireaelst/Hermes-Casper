@@ -132,7 +132,7 @@ The decision LLM is **provider-agnostic** (any OpenAI-compatible API). Set in `a
 # OpenRouter (free tier — get a key at openrouter.ai/keys)
 HERMES_LLM_API_KEY=sk-or-...
 HERMES_LLM_BASE_URL=https://openrouter.ai/api/v1
-HERMES_LLM_MODEL=meta-llama/llama-3.3-70b-instruct:free
+HERMES_LLM_MODEL=nvidia/nemotron-3-super-120b-a12b:free   # any :free model; falls back to a policy agent on rate-limit
 
 # …or NVIDIA NIM (free credits — build.nvidia.com, no card)
 # HERMES_LLM_API_KEY=nvapi-...
